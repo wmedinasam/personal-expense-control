@@ -1,0 +1,173 @@
+"use client";
+
+import Link from "next/link";
+import { useActionState } from "react";
+import { createBudget, updateBudget } from "../actions";
+import type { BudgetFormState, RawBudgetInput } from "@/lib/budgets";
+
+export type FormCategory = { id: string; name: string; color: string };
+
+export type FormBudget = {
+  id: string;
+  name: string;
+  amount: string;
+  startDate: string;
+  endDate: string;
+  categoryIds: string[];
+};
+
+const initialState: BudgetFormState = { error: null };
+
+const inputClass =
+  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500";
+
+export function BudgetForm({
+  categories,
+  budget,
+}: {
+  categories: FormCategory[];
+  budget?: FormBudget;
+}) {
+  const action = budget ? updateBudget : createBudget;
+  const [state, formAction, pending] = useActionState(action, initialState);
+
+  // Tras un error se reutilizan los valores enviados, porque React limpia el formulario al terminar la acción.
+  const values: Partial<RawBudgetInput> | undefined = state.values;
+  const selectedCategories = values
+    ? values.categoryIds ?? []
+    : budget?.categoryIds ?? [];
+
+  return (
+    <form
+      action={formAction}
+      className="space-y-4 rounded-lg border border-slate-200 bg-white p-5"
+    >
+      <h2 className="text-base font-semibold text-slate-900">
+        {budget ? "Editar presupuesto" : "Nuevo presupuesto"}
+      </h2>
+
+      {budget && <input type="hidden" name="id" value={budget.id} />}
+
+      {state.error && (
+        <p
+          role="alert"
+          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
+          {state.error}
+        </p>
+      )}
+
+      <div className="space-y-1">
+        <label htmlFor="name" className="text-sm font-medium text-slate-700">
+          Nombre
+        </label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          required
+          maxLength={80}
+          placeholder="Ej.: Comida de noviembre"
+          defaultValue={values?.name ?? budget?.name ?? ""}
+          className={inputClass}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label htmlFor="amount" className="text-sm font-medium text-slate-700">
+          Monto
+        </label>
+        <input
+          id="amount"
+          name="amount"
+          type="text"
+          inputMode="decimal"
+          required
+          placeholder="0.00"
+          defaultValue={values?.amount ?? budget?.amount ?? ""}
+          className={inputClass}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label htmlFor="startDate" className="text-sm font-medium text-slate-700">
+            Inicio
+          </label>
+          <input
+            id="startDate"
+            name="startDate"
+            type="date"
+            required
+            defaultValue={values?.startDate ?? budget?.startDate ?? ""}
+            className={inputClass}
+          />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="endDate" className="text-sm font-medium text-slate-700">
+            Fin
+          </label>
+          <input
+            id="endDate"
+            name="endDate"
+            type="date"
+            required
+            defaultValue={values?.endDate ?? budget?.endDate ?? ""}
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-slate-700">Categorías</legend>
+        <p className="text-xs text-slate-500">
+          Sin categorías seleccionadas, el presupuesto aplica a todos los gastos.
+        </p>
+        {categories.length === 0 ? (
+          <p className="text-sm text-slate-500">No hay categorías creadas.</p>
+        ) : (
+          <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-slate-200 p-2">
+            {categories.map((category) => (
+              <label
+                key={category.id}
+                className="flex items-center gap-2 rounded px-1 py-1 text-sm text-slate-800 hover:bg-slate-50"
+              >
+                <input
+                  type="checkbox"
+                  name="categoryIds"
+                  value={category.id}
+                  defaultChecked={selectedCategories.includes(category.id)}
+                  className="h-4 w-4 rounded border-slate-300"
+                />
+                <span
+                  aria-hidden
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: category.color }}
+                />
+                {category.name}
+              </label>
+            ))}
+          </div>
+        )}
+      </fieldset>
+
+      <div className="flex items-center justify-end gap-3 pt-2">
+        {budget && (
+          <Link
+            href="/presupuestos"
+            className="text-sm text-slate-600 hover:text-slate-900 hover:underline"
+          >
+            Cancelar
+          </Link>
+        )}
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-60"
+        >
+          {pending ? "Guardando…" : budget ? "Guardar cambios" : "Crear presupuesto"}
+        </button>
+      </div>
+    </form>
+  );
+}

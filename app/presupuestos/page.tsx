@@ -1,0 +1,190 @@
+import Link from "next/link";
+import {
+  formatIsoDate,
+  getBudgetById,
+  listBudgetViews,
+  listCategories,
+  todayUtcDate,
+  type BudgetView,
+} from "@/lib/budgets";
+import { BudgetForm } from "./_components/budget-form";
+import { DeleteBudgetButton } from "./_components/delete-budget-button";
+import { formatDate, formatMoney } from "./format";
+
+// Consulta la base de datos en cada petición: el consumo depende de la fecha de hoy.
+export const dynamic = "force-dynamic";
+
+type PageProps = {
+  searchParams: Promise<{ editar?: string | string[] }>;
+};
+
+export default async function PresupuestosPage({ searchParams }: PageProps) {
+  const { editar } = await searchParams;
+  const editId = typeof editar === "string" ? editar : null;
+  const today = todayUtcDate();
+
+  const [budgets, categories, editing] = await Promise.all([
+    listBudgetViews(today),
+    listCategories(),
+    editId ? getBudgetById(editId) : Promise.resolve(null),
+  ]);
+
+  const formBudget = editing
+    ? {
+        id: editing.id,
+        name: editing.name,
+        amount: editing.amount.toFixed(2),
+        startDate: formatIsoDate(editing.startDate),
+        endDate: formatIsoDate(editing.endDate),
+        categoryIds: editing.categories.map((c) => c.id),
+      }
+    : undefined;
+
+  return (
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight">Presupuestos</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            El consumo se calcula con los gastos registrados entre las fechas del
+            presupuesto y de sus categorías.
+          </p>
+        </header>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <aside className="lg:col-start-3 lg:row-start-1 lg:self-start lg:sticky lg:top-6">
+            <BudgetForm
+              key={formBudget?.id ?? "nuevo"}
+              categories={categories}
+              budget={formBudget}
+            />
+          </aside>
+
+          <section className="space-y-4 lg:col-span-2 lg:col-start-1 lg:row-start-1">
+            {budgets.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-600">
+                Todavía no hay presupuestos. Crea el primero desde el formulario.
+              </p>
+            ) : (
+              budgets.map((budget) => (
+                <BudgetCard
+                  key={budget.id}
+                  budget={budget}
+                  isEditing={budget.id === editing?.id}
+                />
+              ))
+            )}
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function BudgetCard({ budget, isEditing }: { budget: BudgetView; isEditing: boolean }) {
+  const c = budget.consumption;
+  const overBudget = c.remaining < 0;
+  const barWidth = Math.min(c.percentUsed, 100);
+  const barColor =
+    c.percentUsed > 100
+      ? "bg-red-600"
+      : c.percentUsed >= 80
+        ? "bg-amber-500"
+        : "bg-slate-700";
+
+  let timeLabel: string;
+  if (c.remainingDays === 0) {
+    timeLabel = "Periodo finalizado";
+  } else if (c.elapsedDays === 0) {
+    timeLabel = `Empieza el ${formatDate(budget.startDate)}`;
+  } else {
+    timeLabel = `Día ${c.elapsedDays} de ${c.totalDays}`;
+  }
+
+  return (
+    <article
+      className={`rounded-lg border bg-white p-5 ${
+        isEditing ? "border-slate-900" : "border-slate-200"
+      }`}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-semibold">{budget.name}</h2>
+          <p className="text-sm text-slate-600">
+            {formatDate(budget.startDate)} – {formatDate(budget.endDate)}
+          </p>
+          <p className="mt-1 flex flex-wrap gap-1 text-xs text-slate-600">
+            {budget.categoryNames.length === 0 ? (
+              <span className="rounded bg-slate-100 px-2 py-0.5">Todas las categorías</span>
+            ) : (
+              budget.categoryNames.map((name) => (
+                <span key={name} className="rounded bg-slate-100 px-2 py-0.5">
+                  {name}
+                </span>
+              ))
+            )}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-4">
+          <Link
+            href={`/presupuestos?editar=${budget.id}`}
+            className="text-sm text-slate-700 hover:text-slate-900 hover:underline"
+          >
+            Editar
+          </Link>
+          <DeleteBudgetButton id={budget.id} name={budget.name} />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-baseline justify-between text-sm">
+          <span className="font-medium">
+            {formatMoney(c.spent)} <span className="text-slate-500">de {formatMoney(budget.amount)}</span>
+          </span>
+          <span className="tabular-nums text-slate-600">{c.percentUsed.toFixed(0)}%</span>
+        </div>
+        <div
+          className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-slate-200"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(barWidth)}
+          aria-label={`Consumo de ${budget.name}`}
+        >
+          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${barWidth}%` }} />
+        </div>
+      </div>
+
+      <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+        <div>
+          <dt className="text-slate-500">Restante</dt>
+          <dd className={`font-medium tabular-nums ${overBudget ? "text-red-600" : ""}`}>
+            {formatMoney(c.remaining)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">Ritmo diario sugerido</dt>
+          <dd className="font-medium tabular-nums">
+            {c.suggestedDailyPace === null
+              ? "—"
+              : `${formatMoney(c.suggestedDailyPace)} / día`}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">Plazo</dt>
+          <dd className="font-medium">{timeLabel}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">Días restantes</dt>
+          <dd className="font-medium tabular-nums">{c.remainingDays}</dd>
+        </div>
+      </dl>
+
+      {overBudget && (
+        <p className="mt-3 text-sm text-red-600">
+          Presupuesto superado en {formatMoney(-c.remaining)}.
+        </p>
+      )}
+    </article>
+  );
+}
