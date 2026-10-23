@@ -1,5 +1,6 @@
 // Constantes y tipos compartidos entre componentes cliente y servidor.
 // No importar Prisma aquí: este archivo se incluye en el bundle del cliente.
+import type { AuditStampData } from "@/lib/audit";
 
 export const NAME_MAX_LENGTH = 40;
 export const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
@@ -114,4 +115,4 @@ export type CategoryListItem = {
   color: string;
   icon: string | null;
   expenseCount: number;
-};
+} & AuditStampData;

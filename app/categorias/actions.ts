@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import {
   countCategoryExpenses,
   validateCategoryFields,
@@ -30,11 +32,18 @@ export async function createCategory(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
+  const user = await requireUser();
   const parsed = await validateCategoryFields(readFields(formData));
   if (!parsed.ok) return { ok: false, error: parsed.error };
 
   try {
-    const created = await prisma.category.create({ data: parsed.data });
+    const created = await prisma.$transaction(async (tx) => {
+      const after = await tx.category.create({
+        data: { ...parsed.data, createdById: user.id, updatedById: user.id },
+      });
+      await audit(tx, { userId: user.id, action: "CREATE", entity: "Category", entityId: after.id, after });
+      return after;
+    });
     revalidatePath("/categorias");
     return { ok: true, message: `Categoría «${created.name}» creada.` };
   } catch (e) {
@@ -49,6 +58,7 @@ export async function updateCategory(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
+  const user = await requireUser();
   const id = readId(formData);
   if (!id) return { ok: false, error: "Falta el identificador de la categoría." };
 
@@ -59,7 +69,17 @@ export async function updateCategory(
   if (!parsed.ok) return { ok: false, error: parsed.error };
 
   try {
-    const updated = await prisma.category.update({ where: { id }, data: parsed.data });
+    const updated = await prisma.$transaction(async (tx) => {
+      const before = await tx.category.findUnique({ where: { id } });
+      if (!before) return null; // borrada entre la validación y la escritura
+      const after = await tx.category.update({
+        where: { id },
+        data: { ...parsed.data, updatedById: user.id },
+      });
+      await audit(tx, { userId: user.id, action: "UPDATE", entity: "Category", entityId: id, before, after });
+      return after;
+    });
+    if (!updated) return { ok: false, error: "La categoría ya no existe." };
     revalidatePath("/categorias");
     return { ok: true, message: `Categoría «${updated.name}» guardada.` };
   } catch (e) {
@@ -74,6 +94,7 @@ export async function deleteCategory(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
+  const user = await requireUser();
   const id = readId(formData);
   if (!id) return { ok: false, error: "Falta el identificador de la categoría." };
 
@@ -90,7 +111,14 @@ export async function deleteCategory(
     const expenseCount = await countCategoryExpenses(id);
     if (expenseCount > 0) return { ok: false, error: blocking(expenseCount) };
 
-    await prisma.category.delete({ where: { id } });
+    const deleted = await prisma.$transaction(async (tx) => {
+      const before = await tx.category.findUnique({ where: { id } });
+      if (!before) return false;
+      await tx.category.delete({ where: { id } });
+      await audit(tx, { userId: user.id, action: "DELETE", entity: "Category", entityId: id, before });
+      return true;
+    });
+    if (!deleted) return { ok: false, error: "La categoría ya no existe." };
     revalidatePath("/categorias");
     return { ok: true, message: `Categoría «${category.name}» borrada.` };
   } catch (e) {
