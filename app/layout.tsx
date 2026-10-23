@@ -38,7 +38,11 @@ export default async function RootLayout({
   const isAdmin = user?.status === "ACTIVE" && user.role === "ADMIN";
   const pendingUsers = isAdmin ? await prisma.user.count({ where: { status: "PENDING" } }) : 0;
   const links = isAdmin
-    ? [...LINKS, { href: "/usuarios", label: pendingUsers ? `Usuarios (${pendingUsers})` : "Usuarios" }]
+    ? [
+        ...LINKS,
+        { href: "/usuarios", label: pendingUsers ? `Usuarios (${pendingUsers})` : "Usuarios" },
+        { href: "/auditoria", label: "Auditoría" },
+      ]
     : LINKS;
 
   const logout = (
