@@ -1,5 +1,6 @@
 import { Currency, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { WHO_INCLUDE, type AuditStampData } from "@/lib/audit";
 import {
   computeBudgetConsumption,
   type BudgetConsumption,
@@ -42,6 +43,7 @@ export type BudgetView = {
   categoryIds: string[];
   categories: CategoryOption[];
   consumption: BudgetConsumption;
+  audit: AuditStampData;
 };
 
 export type CategoryOption = {
@@ -190,7 +192,10 @@ export async function listBudgetViews(
   usdToGtq: Prisma.Decimal,
 ): Promise<BudgetView[]> {
   const budgets = await prisma.budget.findMany({
-    include: { categories: { select: { id: true, name: true, color: true, icon: true } } },
+    include: {
+      categories: { select: { id: true, name: true, color: true, icon: true } },
+      ...WHO_INCLUDE,
+    },
     orderBy: [{ startDate: "desc" }, { name: "asc" }],
   });
   if (budgets.length === 0) return [];
@@ -222,6 +227,12 @@ export async function listBudgetViews(
       endDate: budget.endDate,
       categoryIds: budget.categories.map((c) => c.id),
       categories: budget.categories,
+      audit: {
+        createdAt: budget.createdAt,
+        createdBy: budget.createdBy,
+        updatedAt: budget.updatedAt,
+        updatedBy: budget.updatedBy,
+      },
       consumption: computeBudgetConsumption(
         {
           amount,

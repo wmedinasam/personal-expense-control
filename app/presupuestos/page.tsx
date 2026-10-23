@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CategoryIcon from "@/app/categorias/CategoryIcon";
+import { AuditStamp } from "@/app/_components/AuditStamp";
 import {
   formatFormDate,
   getBudgetById,
@@ -193,6 +194,10 @@ function BudgetCard({ budget, isEditing }: { budget: BudgetView; isEditing: bool
           Presupuesto superado en {formatMoney(-c.remaining, budget.currency)}.
         </p>
       )}
+
+      <div className="mt-3">
+        <AuditStamp record={budget.audit} />
+      </div>
     </article>
   );
 }
