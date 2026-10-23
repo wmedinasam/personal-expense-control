@@ -51,7 +51,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const buckets = buildTrendBuckets(range, granularity);
 
   const allCategories = await prisma.category.findMany({
-    select: { id: true, name: true, color: true },
+    select: { id: true, name: true, color: true, icon: true },
     orderBy: { name: "asc" },
   });
   const selectedIds = parseCategoryIds(
@@ -207,11 +207,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                       defaultChecked={selectedIds.includes(c.id)}
                       className="size-4 accent-zinc-900 dark:accent-zinc-100"
                     />
-                    <span
-                      aria-hidden
-                      className="inline-block size-2.5 rounded-full"
-                      style={{ backgroundColor: c.color }}
-                    />
+                    <CategoryIcon icon={c.icon} color={c.color} size={14} />
                     {c.name}
                   </label>
                 ))}
