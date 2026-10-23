@@ -24,6 +24,8 @@ model Category {
   id        String    @id @default(cuid())
   name      String    @unique
   color     String    @default("#64748b")
+  icon      String?   // Nombre de un icono predefinido (ver CATEGORY_ICON_NAMES).
+  iconData  String?   // Data URL de un icono subido por el usuario (máx. 100 KB).
   expenses  Expense[]
   budgets   Budget[]  @relation("BudgetCategories")
   createdAt DateTime  @default(now())

@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { deleteCategory } from "./actions";
 import CategoryForm from "./CategoryForm";
+import { CategoryIcon } from "./icons";
 import type { CategoryListItem } from "./shared";
 
 export default function CategoryRow({ category }: { category: CategoryListItem }) {
@@ -14,7 +15,13 @@ export default function CategoryRow({ category }: { category: CategoryListItem }
     return (
       <li className="py-4">
         <CategoryForm
-          category={{ id: category.id, name: category.name, color: category.color }}
+          category={{
+            id: category.id,
+            name: category.name,
+            color: category.color,
+            icon: category.icon,
+            iconData: category.iconData,
+          }}
           onSaved={() => setEditing(false)}
           onCancel={() => setEditing(false)}
         />
@@ -31,11 +38,26 @@ export default function CategoryRow({ category }: { category: CategoryListItem }
     <li className="py-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <span
-            aria-hidden
-            className="block h-3 w-3 shrink-0 rounded-full"
-            style={{ backgroundColor: category.color }}
-          />
+          {category.icon || category.iconData ? (
+            <span
+              aria-hidden
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+              style={{ backgroundColor: `${category.color}1f` }}
+            >
+              <CategoryIcon
+                icon={category.icon}
+                iconData={category.iconData}
+                color={category.color}
+                className="h-4 w-4 object-contain"
+              />
+            </span>
+          ) : (
+            <span
+              aria-hidden
+              className="block h-3 w-3 shrink-0 rounded-full"
+              style={{ backgroundColor: category.color }}
+            />
+          )}
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-slate-900">{category.name}</p>
             <p className="text-xs text-slate-500">{usage}</p>

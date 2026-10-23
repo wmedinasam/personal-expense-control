@@ -13,6 +13,8 @@ function readFields(formData: FormData): CategoryFields {
   return {
     name: String(formData.get("name") ?? ""),
     color: String(formData.get("color") ?? ""),
+    icon: String(formData.get("icon") ?? ""),
+    iconData: String(formData.get("iconData") ?? ""),
   };
 }
 
