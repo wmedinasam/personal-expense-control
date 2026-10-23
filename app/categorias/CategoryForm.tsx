@@ -1,15 +1,21 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, type ChangeEvent } from "react";
 import { createCategory, updateCategory } from "./actions";
+import CategoryIcon, { LUCIDE_ICONS } from "./CategoryIcon";
 import {
   CATEGORY_COLORS,
+  CATEGORY_ICONS,
   DEFAULT_CATEGORY_COLOR,
+  ICON_ACCEPT,
+  ICON_MAX_BYTES,
+  LUCIDE_PREFIX,
   NAME_MAX_LENGTH,
+  parseCategoryIcon,
 } from "./shared";
 
 type Props = {
-  category?: { id: string; name: string; color: string };
+  category?: { id: string; name: string; color: string; icon: string | null };
   onCancel?: () => void;
   onSaved?: () => void;
 };
@@ -21,6 +27,36 @@ export default function CategoryForm({ category, onCancel, onSaved }: Props) {
 
   const [name, setName] = useState(category?.name ?? "");
   const [color, setColor] = useState(category?.color ?? DEFAULT_CATEGORY_COLOR);
+  const [icon, setIcon] = useState(category?.icon ?? "");
+  const [iconError, setIconError] = useState<string | null>(null);
+
+  // Aviso inmediato en el cliente; el servidor vuelve a validar al guardar.
+  function handleFile(e: ChangeEvent<HTMLInputElement>) {
+    const input = e.target;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    if (!ICON_ACCEPT.split(",").includes(file.type)) {
+      setIconError("La imagen debe ser PNG, JPG, WEBP o SVG.");
+      return;
+    }
+    if (file.size > ICON_MAX_BYTES) {
+      setIconError("La imagen no puede pesar más de 100 KB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const parsed = parseCategoryIcon(String(reader.result));
+      if (parsed.ok) {
+        setIcon(parsed.icon ?? "");
+        setIconError(null);
+      } else {
+        setIconError(parsed.error);
+      }
+    };
+    reader.onerror = () => setIconError("No se pudo leer la imagen.");
+    reader.readAsDataURL(file);
+  }
 
   useEffect(() => {
     if (!state?.ok) return;
@@ -29,6 +65,8 @@ export default function CategoryForm({ category, onCancel, onSaved }: Props) {
     } else {
       setName("");
       setColor(DEFAULT_CATEGORY_COLOR);
+      setIcon("");
+      setIconError(null);
     }
     // Solo reaccionar a cada nuevo resultado de la acción.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -79,6 +117,66 @@ export default function CategoryForm({ category, onCancel, onSaved }: Props) {
             </label>
           ))}
         </div>
+      </fieldset>
+
+      <fieldset>
+        <legend className="block text-sm font-medium text-slate-700 dark:text-slate-300">Ícono</legend>
+        <input type="hidden" name="icon" value={icon} />
+        <div className="mt-2 grid grid-cols-8 gap-2 sm:grid-cols-12">
+          {CATEGORY_ICONS.map(({ name: iconName, label }) => {
+            const value = `${LUCIDE_PREFIX}${iconName}`;
+            const Icon = LUCIDE_ICONS[iconName];
+            const selected = icon === value;
+            return (
+              <button
+                key={iconName}
+                type="button"
+                title={label}
+                aria-label={label}
+                aria-pressed={selected}
+                onClick={() => {
+                  setIcon(value);
+                  setIconError(null);
+                }}
+                className={`flex h-9 w-9 items-center justify-center rounded-md border ${
+                  selected
+                    ? "border-slate-900 dark:border-slate-100 bg-slate-100 dark:bg-slate-800"
+                    : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                } focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 dark:focus-visible:ring-slate-400`}
+              >
+                <Icon aria-hidden size={18} color={color} />
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 dark:border-slate-800">
+            <CategoryIcon icon={icon} color={color} size={20} />
+          </span>
+          <label className="cursor-pointer rounded-md border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus-within:ring-2 focus-within:ring-slate-500 dark:focus-within:ring-slate-400">
+            Subir imagen
+            <input type="file" accept={ICON_ACCEPT} onChange={handleFile} className="sr-only" />
+          </label>
+          {icon && (
+            <button
+              type="button"
+              onClick={() => {
+                setIcon("");
+                setIconError(null);
+              }}
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Quitar ícono
+            </button>
+          )}
+          <span className="text-xs text-slate-500 dark:text-slate-400">PNG, JPG, WEBP o SVG, máx. 100 KB.</span>
+        </div>
+        {iconError && (
+          <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+            {iconError}
+          </p>
+        )}
       </fieldset>
 
       {errorMessage && (

@@ -162,7 +162,7 @@ export function getExpense(id: string) {
 export function listExpenses(filters: ExpenseFilters) {
   return prisma.expense.findMany({
     where: buildWhere(filters),
-    include: { category: { select: { name: true, color: true } } },
+    include: { category: { select: { name: true, color: true, icon: true } } },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
   });
 }

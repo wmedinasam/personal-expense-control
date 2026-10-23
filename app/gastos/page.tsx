@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CategoryIcon from "@/app/categorias/CategoryIcon";
 import { prisma } from "@/lib/db";
 import {
   formatAmount,
@@ -224,11 +225,7 @@ export default async function GastosPage({
                 </time>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 text-sm font-medium">
-                    <span
-                      aria-hidden
-                      className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: expense.category.color }}
-                    />
+                    <CategoryIcon icon={expense.category.icon} color={expense.category.color} />
                     {expense.category.name}
                   </div>
                   <p className="truncate text-sm text-neutral-600 dark:text-neutral-400">
