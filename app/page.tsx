@@ -104,7 +104,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const trendTitle = granularity === "day" ? "Gasto diario" : "Gasto mensual";
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
         <header className="flex flex-col gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">Reportes de gastos</h1>
@@ -112,7 +112,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <nav
               aria-label="Tipo de periodo"
-              className="inline-flex w-fit rounded-lg border border-zinc-200 bg-white p-1 text-sm"
+              className="inline-flex w-fit rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-1 text-sm"
             >
               {PERIODS.map((option) => {
                 const active = option.value === period;
@@ -123,8 +123,8 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                     aria-current={active ? "page" : undefined}
                     className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
                       active
-                        ? "bg-zinc-900 text-white"
-                        : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+                        ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-neutral-950"
+                        : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
                     }`}
                   >
                     {option.label}
@@ -136,7 +136,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             <div className="flex items-center justify-between gap-2 text-sm sm:justify-end">
               <Link
                 href={prevHref}
-                className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 font-medium text-zinc-700 hover:bg-zinc-100"
+                className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 px-3 py-1.5 font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
                 ← Anterior
               </Link>
@@ -146,14 +146,14 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
               {!isCurrentPeriod && (
                 <Link
                   href={todayHref}
-                  className="rounded-md px-2 py-1.5 text-zinc-500 hover:text-zinc-900"
+                  className="rounded-md px-2 py-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                 >
                   Hoy
                 </Link>
               )}
               <Link
                 href={nextHref}
-                className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 font-medium text-zinc-700 hover:bg-zinc-100"
+                className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 px-3 py-1.5 font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
                 Siguiente →
               </Link>
@@ -168,8 +168,8 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </section>
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-zinc-200 bg-white p-5 lg:col-span-2">
-            <h2 className="mb-4 text-sm font-medium text-zinc-500">{trendTitle}</h2>
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-5 lg:col-span-2">
+            <h2 className="mb-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">{trendTitle}</h2>
             {expenses.length === 0 ? (
               <Empty />
             ) : (
@@ -180,8 +180,8 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             )}
           </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-5">
-            <h2 className="mb-4 text-sm font-medium text-zinc-500">Gasto por categoría</h2>
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-5">
+            <h2 className="mb-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">Gasto por categoría</h2>
             {categories.length === 0 ? (
               <Empty />
             ) : (
@@ -194,7 +194,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                     color: c.color,
                   }))}
                 />
-                <ul className="mt-4 divide-y divide-zinc-100 text-sm">
+                <ul className="mt-4 divide-y divide-zinc-100 dark:divide-zinc-800 text-sm">
                   {categories.map((c) => (
                     <li key={c.categoryId} className="flex items-center justify-between py-2">
                       <span className="flex items-center gap-2">
@@ -205,9 +205,9 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                         />
                         {c.name}
                       </span>
-                      <span className="tabular-nums text-zinc-600">
+                      <span className="tabular-nums text-zinc-600 dark:text-zinc-400">
                         {money(c.total)}{" "}
-                        <span className="text-zinc-400">({formatPercent(c.share)})</span>
+                        <span className="text-zinc-400 dark:text-zinc-600">({formatPercent(c.share)})</span>
                       </span>
                     </li>
                   ))}
@@ -217,10 +217,10 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           </div>
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="mb-4 text-sm font-medium text-zinc-500">Presupuestos activos</h2>
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-5">
+          <h2 className="mb-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">Presupuestos activos</h2>
           {activeBudgets.length === 0 ? (
-            <p className="text-sm text-zinc-500">No hay presupuestos activos en este periodo.</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">No hay presupuestos activos en este periodo.</p>
           ) : (
             <ul className="flex flex-col gap-5">
               {activeBudgets.map((b) => {
@@ -229,7 +229,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                   <li key={b.id} className="flex flex-col gap-2">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
                       <span className="font-medium">{b.name}</span>
-                      <span className="text-xs text-zinc-500">
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
                         {formatShortDate(b.startDate)} – {formatShortDate(b.endDate)}
                       </span>
                     </div>
@@ -239,19 +239,19 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                       aria-valuenow={Math.round(Math.min(b.percent, 100))}
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      className="h-2 w-full overflow-hidden rounded-full bg-zinc-100"
+                      className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900"
                     >
                       <div
-                        className={`h-full rounded-full ${b.exceeded ? "bg-red-500" : "bg-zinc-700"}`}
+                        className={`h-full rounded-full ${b.exceeded ? "bg-red-500 dark:bg-red-400" : "bg-zinc-700 dark:bg-zinc-300"}`}
                         style={{ width: `${barWidth}%` }}
                       />
                     </div>
-                    <div className="flex flex-wrap justify-between gap-x-4 text-xs text-zinc-600 tabular-nums">
+                    <div className="flex flex-wrap justify-between gap-x-4 text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">
                       <span>
                         Gastado {money(b.spent)} de {money(b.amount)} (
                         {formatPercent(b.percent / 100)})
                       </span>
-                      <span className={b.exceeded ? "font-medium text-red-600" : ""}>
+                      <span className={b.exceeded ? "font-medium text-red-600 dark:text-red-400" : ""}>
                         {b.exceeded
                           ? `Excedido por ${money(Math.abs(b.remaining))}`
                           : `Restante ${money(b.remaining)}`}
@@ -270,8 +270,8 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
 
 function Card({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5">
-      <p className="text-sm text-zinc-500">{label}</p>
+    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-5">
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">{label}</p>
       <p
         className={`mt-1 tabular-nums ${emphasis ? "text-3xl font-semibold" : "text-2xl font-medium"}`}
       >
@@ -282,5 +282,5 @@ function Card({ label, value, emphasis = false }: { label: string; value: string
 }
 
 function Empty() {
-  return <p className="py-12 text-center text-sm text-zinc-500">Sin gastos en este periodo.</p>;
+  return <p className="py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">Sin gastos en este periodo.</p>;
 }

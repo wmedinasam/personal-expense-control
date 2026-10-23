@@ -37,8 +37,8 @@ export default function CategoryRow({ category }: { category: CategoryListItem }
             style={{ backgroundColor: category.color }}
           />
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-slate-900">{category.name}</p>
-            <p className="text-xs text-slate-500">{usage}</p>
+            <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{category.name}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{usage}</p>
           </div>
         </div>
 
@@ -46,7 +46,7 @@ export default function CategoryRow({ category }: { category: CategoryListItem }
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             Editar
           </button>
@@ -62,7 +62,7 @@ export default function CategoryRow({ category }: { category: CategoryListItem }
                   formRef.current?.requestSubmit();
                 }
               }}
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 disabled:opacity-60"
             >
               {deleting ? "Borrando…" : "Borrar"}
             </button>
@@ -71,7 +71,7 @@ export default function CategoryRow({ category }: { category: CategoryListItem }
       </div>
 
       {deleteState && !deleteState.ok && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
+        <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
           {deleteState.error}
         </p>
       )}
