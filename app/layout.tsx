@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { signOut } from "@/auth";
 import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getCurrentUser();
+  const isAdmin = user?.status === "ACTIVE" && user.role === "ADMIN";
+  const pendingUsers = isAdmin ? await prisma.user.count({ where: { status: "PENDING" } }) : 0;
+  const links = isAdmin
+    ? [...LINKS, { href: "/usuarios", label: pendingUsers ? `Usuarios (${pendingUsers})` : "Usuarios" }]
+    : LINKS;
 
   const logout = (
     <form
@@ -71,7 +77,7 @@ export default async function RootLayout({
         <nav className="border-b border-neutral-800 bg-neutral-950">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-3 text-sm">
             <ul className="flex flex-wrap gap-4">
-              {LINKS.map((l) => (
+              {links.map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} className="text-neutral-300 hover:text-white hover:underline">
                     {l.label}
