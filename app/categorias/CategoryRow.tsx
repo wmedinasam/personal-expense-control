@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { deleteCategory } from "./actions";
 import CategoryForm from "./CategoryForm";
+import CategoryIcon from "./CategoryIcon";
 import type { CategoryListItem } from "./shared";
 
 export default function CategoryRow({ category }: { category: CategoryListItem }) {
@@ -14,7 +15,7 @@ export default function CategoryRow({ category }: { category: CategoryListItem }
     return (
       <li className="py-4">
         <CategoryForm
-          category={{ id: category.id, name: category.name, color: category.color }}
+          category={{ id: category.id, name: category.name, color: category.color, icon: category.icon }}
           onSaved={() => setEditing(false)}
           onCancel={() => setEditing(false)}
         />
@@ -31,11 +32,7 @@ export default function CategoryRow({ category }: { category: CategoryListItem }
     <li className="py-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <span
-            aria-hidden
-            className="block h-3 w-3 shrink-0 rounded-full"
-            style={{ backgroundColor: category.color }}
-          />
+          <CategoryIcon icon={category.icon} color={category.color} size={20} />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{category.name}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{usage}</p>

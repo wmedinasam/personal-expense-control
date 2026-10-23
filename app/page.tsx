@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
+import CategoryIcon from "@/app/categorias/CategoryIcon";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { CURRENCY_SYMBOL } from "@/lib/currency";
@@ -98,7 +99,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         currency: e.currency,
         date: e.date,
         categoryId: e.categoryId,
-        category: { id: e.category.id, name: e.category.name, color: e.category.color },
+        category: { id: e.category.id, name: e.category.name, color: e.category.color, icon: e.category.icon },
       })),
       fx,
     );
@@ -276,11 +277,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                   {categories.map((c) => (
                     <li key={c.categoryId} className="flex items-center justify-between py-2">
                       <span className="flex items-center gap-2">
-                        <span
-                          aria-hidden
-                          className="inline-block size-2.5 rounded-full"
-                          style={{ backgroundColor: c.color }}
-                        />
+                        <CategoryIcon icon={c.icon} color={c.color} />
                         {c.name}
                       </span>
                       <span className="tabular-nums text-zinc-600 dark:text-zinc-400">
