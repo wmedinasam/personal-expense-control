@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { CURRENCY_SYMBOL } from "@/lib/currency";
@@ -15,6 +16,7 @@ import {
   getTrendGranularity,
   isInRange,
   isPeriod,
+  parseCategoryIds,
   parseIsoDate,
   shiftPeriod,
   sumAmounts,
@@ -29,10 +31,12 @@ import { CategoriasChart, TendenciaChart } from "@/app/reportes/graficos";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ periodo?: string; fecha?: string }>;
+type SearchParams = Promise<{ periodo?: string; fecha?: string; cat?: string | string[] }>;
 
-function periodHref(period: Period, date: Date): string {
-  return `/?periodo=${period}&fecha=${toIsoDate(date)}`;
+function periodHref(period: Period, date: Date, categoryIds: string[] = []): string {
+  const query = new URLSearchParams({ periodo: period, fecha: toIsoDate(date) });
+  for (const id of categoryIds) query.append("cat", id);
+  return `/?${query}`;
 }
 
 export default async function Home({ searchParams }: { searchParams: SearchParams }) {
@@ -45,15 +49,35 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const granularity = getTrendGranularity(period);
   const buckets = buildTrendBuckets(range, granularity);
 
-  const [settings, expenseRows, budgetRows] = await Promise.all([
+  const allCategories = await prisma.category.findMany({
+    select: { id: true, name: true, color: true },
+    orderBy: { name: "asc" },
+  });
+  const selectedIds = parseCategoryIds(
+    params.cat,
+    allCategories.map((c) => c.id),
+  );
+  const filtering = selectedIds.length > 0;
+  const periodWhere = { date: { gte: range.start, lt: range.end } };
+  const findExpenses = (where: Prisma.ExpenseWhereInput) =>
+    prisma.expense.findMany({ where, include: { category: true }, orderBy: { date: "asc" } });
+
+  const [settings, expenseRows, budgetExpenseRows, budgetRows] = await Promise.all([
     getSettings(),
-    prisma.expense.findMany({
-      where: { date: { gte: range.start, lt: range.end } },
-      include: { category: true },
-      orderBy: { date: "asc" },
-    }),
+    findExpenses(filtering ? { ...periodWhere, categoryId: { in: selectedIds } } : periodWhere),
+    // El consumo de cada presupuesto se calcula con todos sus gastos, no solo los filtrados.
+    filtering ? findExpenses(periodWhere) : null,
     prisma.budget.findMany({
-      where: { startDate: { lte: range.lastDay }, endDate: { gte: range.start } },
+      where: {
+        startDate: { lte: range.lastDay },
+        endDate: { gte: range.start },
+        ...(filtering && {
+          OR: [
+            { categories: { some: { id: { in: selectedIds } } } },
+            { categories: { none: {} } }, // sin categorías = aplica a todas
+          ],
+        }),
+      },
       include: { categories: { select: { id: true } } },
       orderBy: { startDate: "asc" },
     }),
@@ -67,16 +91,19 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const symbol = CURRENCY_SYMBOL[settings.defaultCurrency];
   const money = (amount: number) => formatMoneyWithSymbol(amount, symbol);
 
-  const expenses = toReportCurrencyExpenses(
-    expenseRows.map((e) => ({
-      amount: e.amount.toNumber(),
-      currency: e.currency,
-      date: e.date,
-      categoryId: e.categoryId,
-      category: { id: e.category.id, name: e.category.name, color: e.category.color },
-    })),
-    fx,
-  );
+  const toRecords = (rows: typeof expenseRows) =>
+    toReportCurrencyExpenses(
+      rows.map((e) => ({
+        amount: e.amount.toNumber(),
+        currency: e.currency,
+        date: e.date,
+        categoryId: e.categoryId,
+        category: { id: e.category.id, name: e.category.name, color: e.category.color },
+      })),
+      fx,
+    );
+  const expenses = toRecords(expenseRows);
+  const budgetExpenses = budgetExpenseRows ? toRecords(budgetExpenseRows) : expenses;
 
   const budgets = toReportCurrencyBudgets(
     budgetRows.map((b) => ({
@@ -94,12 +121,12 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const total = sumAmounts(expenses);
   const categories = aggregateByCategory(expenses);
   const trend = aggregateTrend(expenses, buckets, granularity);
-  const activeBudgets = getActiveBudgets(budgets, expenses, range);
+  const activeBudgets = getActiveBudgets(budgets, budgetExpenses, range);
   const isCurrentPeriod = isInRange(range, today);
 
-  const prevHref = periodHref(period, shiftPeriod(period, reference, -1));
-  const nextHref = periodHref(period, shiftPeriod(period, reference, 1));
-  const todayHref = periodHref(period, today);
+  const prevHref = periodHref(period, shiftPeriod(period, reference, -1), selectedIds);
+  const nextHref = periodHref(period, shiftPeriod(period, reference, 1), selectedIds);
+  const todayHref = periodHref(period, today, selectedIds);
 
   const trendTitle = granularity === "day" ? "Gasto diario" : "Gasto mensual";
 
@@ -119,7 +146,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                 return (
                   <Link
                     key={option.value}
-                    href={periodHref(option.value, reference)}
+                    href={periodHref(option.value, reference, selectedIds)}
                     aria-current={active ? "page" : undefined}
                     className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
                       active
@@ -159,6 +186,57 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
               </Link>
             </div>
           </div>
+
+          {allCategories.length > 0 && (
+            <form
+              method="get"
+              action="/"
+              className="flex flex-col gap-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-4 text-sm"
+            >
+              <input type="hidden" name="periodo" value={period} />
+              <input type="hidden" name="fecha" value={toIsoDate(reference)} />
+              <fieldset className="flex flex-wrap gap-x-4 gap-y-2">
+                <legend className="mb-2 font-medium text-zinc-500 dark:text-zinc-400">Categorías</legend>
+                {allCategories.map((c) => (
+                  <label key={c.id} className="flex cursor-pointer items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                    <input
+                      type="checkbox"
+                      name="cat"
+                      value={c.id}
+                      defaultChecked={selectedIds.includes(c.id)}
+                      className="size-4 accent-zinc-900 dark:accent-zinc-100"
+                    />
+                    <span
+                      aria-hidden
+                      className="inline-block size-2.5 rounded-full"
+                      style={{ backgroundColor: c.color }}
+                    />
+                    {c.name}
+                  </label>
+                ))}
+              </fieldset>
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  className="rounded-md bg-zinc-900 dark:bg-zinc-100 px-3 py-1.5 font-medium text-white dark:text-neutral-950 hover:bg-zinc-700 dark:hover:bg-zinc-300"
+                >
+                  Aplicar
+                </button>
+                <Link
+                  href={periodHref(period, reference)}
+                  aria-current={filtering ? undefined : "page"}
+                  className="rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  Todas
+                </Link>
+                {filtering && (
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    {selectedIds.length} de {allCategories.length} seleccionadas
+                  </span>
+                )}
+              </div>
+            </form>
+          )}
         </header>
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">

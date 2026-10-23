@@ -129,6 +129,19 @@ export function isPeriod(value: unknown): value is Period {
   return value === "mes" || value === "trimestre" || value === "anio";
 }
 
+/**
+ * Ids de categoría del query string (`?cat=a&cat=b`), sin duplicados y
+ * solo los que existen en `validIds`. Vacío = sin filtro (todas).
+ */
+export function parseCategoryIds(
+  raw: string | string[] | undefined,
+  validIds: Iterable<string>,
+): string[] {
+  const valid = new Set(validIds);
+  const values = raw === undefined ? [] : Array.isArray(raw) ? raw : [raw];
+  return [...new Set(values)].filter((id) => valid.has(id));
+}
+
 /** Convierte "YYYY-MM-DD" a Date UTC. Devuelve null si el formato o la fecha no son válidos. */
 export function parseIsoDate(value: string | null | undefined): Date | null {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -350,7 +363,8 @@ export function getActiveBudgets(
       const spentCents = expenses
         .filter(
           (e) =>
-            categories.has(e.categoryId) &&
+            // Sin categorías = aplica a todas (igual que lib/budget-consumption.ts).
+            (categories.size === 0 || categories.has(e.categoryId)) &&
             e.date.getTime() >= from.getTime() &&
             e.date.getTime() < untilEndExclusive,
         )
