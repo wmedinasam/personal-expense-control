@@ -18,16 +18,25 @@ model Setting {
   defaultCurrency Currency @default(GTQ)
   usdToGtq        Decimal  @default(7.5) @db.Decimal(10, 4)
   updatedAt       DateTime @updatedAt
+  createdById     String?
+  createdBy       User?    @relation("SettingCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById     String?
+  updatedBy       User?    @relation("SettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 }
 
 model Category {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  color     String    @default("#64748b")
-  icon      String?   // "lucide:<Nombre>" o data URL de imagen subida
-  expenses  Expense[]
-  budgets   Budget[]  @relation("BudgetCategories")
-  createdAt DateTime  @default(now())
+  id          String    @id @default(cuid())
+  name        String    @unique
+  color       String    @default("#64748b")
+  icon        String? // "lucide:<Nombre>" o data URL de imagen subida
+  expenses    Expense[]
+  budgets     Budget[]  @relation("BudgetCategories")
+  createdAt   DateTime  @default(now())
+  createdById String?
+  createdBy   User?     @relation("CategoryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?     @relation("CategoryUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime  @default(now()) @updatedAt
 }
 
 model Expense {
@@ -39,20 +48,30 @@ model Expense {
   category    Category @relation(fields: [categoryId], references: [id])
   categoryId  String
   createdAt   DateTime @default(now())
+  createdById String?
+  createdBy   User?    @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?    @relation("ExpenseUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime @default(now()) @updatedAt
 
   @@index([date])
   @@index([categoryId, date])
 }
 
 model Budget {
-  id         String     @id @default(cuid())
-  name       String
-  amount     Decimal    @db.Decimal(12, 2)
-  currency   Currency   @default(GTQ)
-  startDate  DateTime   @db.Date
-  endDate    DateTime   @db.Date
-  categories Category[] @relation("BudgetCategories")
-  createdAt  DateTime   @default(now())
+  id          String     @id @default(cuid())
+  name        String
+  amount      Decimal    @db.Decimal(12, 2)
+  currency    Currency   @default(GTQ)
+  startDate   DateTime   @db.Date
+  endDate     DateTime   @db.Date
+  categories  Category[] @relation("BudgetCategories")
+  createdAt   DateTime   @default(now())
+  createdById String?
+  createdBy   User?      @relation("BudgetCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?      @relation("BudgetUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime   @default(now()) @updatedAt
 
   @@index([startDate, endDate])
 }
@@ -83,6 +102,16 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   accounts      Account[]
+
+  categoriesCreated Category[] @relation("CategoryCreatedBy")
+  categoriesUpdated Category[] @relation("CategoryUpdatedBy")
+  expensesCreated   Expense[]  @relation("ExpenseCreatedBy")
+  expensesUpdated   Expense[]  @relation("ExpenseUpdatedBy")
+  budgetsCreated    Budget[]   @relation("BudgetCreatedBy")
+  budgetsUpdated    Budget[]   @relation("BudgetUpdatedBy")
+  settingsCreated   Setting[]  @relation("SettingCreatedBy")
+  settingsUpdated   Setting[]  @relation("SettingUpdatedBy")
+  auditLogs         AuditLog[]
 }
 
 // Cuenta externa enlazada (Google). Campos que exige el adaptador de Prisma de Auth.js.
@@ -103,4 +132,32 @@ model Account {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([provider, providerAccountId])
+}
+
+// --- Auditoría ---
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGIN_DENIED
+}
+
+// Un registro por cada cambio o ingreso. before/after son copias del registro (JSON).
+model AuditLog {
+  id        String      @id @default(cuid())
+  at        DateTime    @default(now())
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmail String? // copia del correo: queda aunque no exista el usuario (LOGIN_DENIED)
+  action    AuditAction
+  entity    String // "Category" | "Expense" | "Budget" | "Setting" | "User"
+  entityId  String?
+  before    Json?
+  after     Json?
+
+  @@index([at])
+  @@index([userId, at])
+  @@index([entity, entityId])
 }
