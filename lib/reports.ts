@@ -331,9 +331,83 @@ export function aggregateTrend(
 }
 
 /**
+ * Filtro de categorías del dashboard.
+ *
+ * Los ids llegan de la URL como `cats=id1,id2`. Lista vacía = sin filtro
+ * (todas las categorías).
+ */
+
+/** Lee el parámetro `cats`: admite una cadena con comas o varios parámetros. Sin duplicados ni vacíos. */
+export function parseCategoryIds(value: string | string[] | null | undefined): string[] {
+  if (value === undefined || value === null) return [];
+  const raw = Array.isArray(value) ? value : [value];
+  const ids = raw
+    .flatMap((v) => v.split(","))
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
+  return [...new Set(ids)];
+}
+
+/**
+ * Ids que realmente aplican: solo los que existen en `available`.
+ * Devuelve [] (sin filtro) si no queda ninguno o si están seleccionadas todas.
+ */
+export function resolveCategoryFilter(
+  selected: readonly string[],
+  available: readonly string[],
+): string[] {
+  const availableSet = new Set(available);
+  const valid = [...new Set(selected.filter((id) => availableSet.has(id)))];
+  if (valid.length === 0 || valid.length === availableSet.size) return [];
+  return valid;
+}
+
+/** Gastos de las categorías elegidas. Lista vacía = todos. No modifica la entrada. */
+export function filterExpensesByCategories<T extends { categoryId: string }>(
+  expenses: readonly T[],
+  categoryIds: readonly string[],
+): T[] {
+  if (categoryIds.length === 0) return [...expenses];
+  const selected = new Set(categoryIds);
+  return expenses.filter((e) => selected.has(e.categoryId));
+}
+
+/**
+ * Presupuestos que cuentan con la selección: los que no tienen categorías
+ * (aplican a todas) y los que comparten alguna categoría con la selección.
+ * Lista vacía = todos. No modifica la entrada.
+ */
+export function filterBudgetsByCategories(
+  budgets: readonly BudgetRecord[],
+  categoryIds: readonly string[],
+): BudgetRecord[] {
+  if (categoryIds.length === 0) return [...budgets];
+  const selected = new Set(categoryIds);
+  return budgets.filter(
+    (b) => b.categoryIds.length === 0 || b.categoryIds.some((id) => selected.has(id)),
+  );
+}
+
+/** Ids en formato de URL: `id1,id2`. Vacío si no hay filtro. */
+export function serializeCategoryIds(categoryIds: readonly string[]): string {
+  return categoryIds.map((id) => encodeURIComponent(id)).join(",");
+}
+
+/** Enlace al dashboard conservando periodo, fecha y filtro de categorías. */
+export function buildDashboardHref(
+  period: Period,
+  isoDate: string,
+  categoryIds: readonly string[] = [],
+): string {
+  const base = `/?periodo=${period}&fecha=${isoDate}`;
+  return categoryIds.length === 0 ? base : `${base}&cats=${serializeCategoryIds(categoryIds)}`;
+}
+
+/**
  * Presupuestos que se solapan con el periodo. El gasto de cada presupuesto
- * cuenta solo los gastos de sus categorías dentro de la intersección entre
- * las fechas del presupuesto y las del periodo.
+ * cuenta los gastos de sus categorías dentro de la intersección entre
+ * las fechas del presupuesto y las del periodo. Un presupuesto sin
+ * categorías aplica a todos los gastos.
  */
 export function getActiveBudgets(
   budgets: BudgetRecord[],
@@ -345,12 +419,12 @@ export function getActiveBudgets(
     .map((b) => {
       const from = b.startDate.getTime() > range.start.getTime() ? b.startDate : range.start;
       const untilEndExclusive = Math.min(range.end.getTime(), b.endDate.getTime() + DAY_MS);
-      const categories = new Set(b.categoryIds);
+      const categories = b.categoryIds.length === 0 ? null : new Set(b.categoryIds);
 
       const spentCents = expenses
         .filter(
           (e) =>
-            categories.has(e.categoryId) &&
+            (categories === null || categories.has(e.categoryId)) &&
             e.date.getTime() >= from.getTime() &&
             e.date.getTime() < untilEndExclusive,
         )

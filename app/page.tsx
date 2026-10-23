@@ -6,7 +6,10 @@ import {
   PERIODS,
   aggregateByCategory,
   aggregateTrend,
+  buildDashboardHref,
   buildTrendBuckets,
+  filterBudgetsByCategories,
+  filterExpensesByCategories,
   formatMoneyWithSymbol,
   formatPercent,
   formatShortDate,
@@ -15,7 +18,9 @@ import {
   getTrendGranularity,
   isInRange,
   isPeriod,
+  parseCategoryIds,
   parseIsoDate,
+  resolveCategoryFilter,
   shiftPeriod,
   sumAmounts,
   toIsoDate,
@@ -26,14 +31,15 @@ import {
   type ReportCurrency,
 } from "@/lib/reports";
 import { CategoriasChart, TendenciaChart } from "@/app/reportes/graficos";
+import { FiltroCategorias } from "@/app/_components/filtro-categorias";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ periodo?: string; fecha?: string }>;
-
-function periodHref(period: Period, date: Date): string {
-  return `/?periodo=${period}&fecha=${toIsoDate(date)}`;
-}
+type SearchParams = Promise<{
+  periodo?: string;
+  fecha?: string;
+  cats?: string | string[];
+}>;
 
 export default async function Home({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
@@ -45,8 +51,12 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const granularity = getTrendGranularity(period);
   const buckets = buildTrendBuckets(range, granularity);
 
-  const [settings, expenseRows, budgetRows] = await Promise.all([
+  const [settings, categoryRows, expenseRows, budgetRows] = await Promise.all([
     getSettings(),
+    prisma.category.findMany({
+      select: { id: true, name: true, color: true },
+      orderBy: { name: "asc" },
+    }),
     prisma.expense.findMany({
       where: { date: { gte: range.start, lt: range.end } },
       include: { category: true },
@@ -59,6 +69,14 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     }),
   ]);
 
+  // Ids elegidos que existen. Vacío = todas las categorías (sin filtro).
+  const selectedCategoryIds = resolveCategoryFilter(
+    parseCategoryIds(params.cats),
+    categoryRows.map((c) => c.id),
+  );
+  const periodHref = (p: Period, date: Date) =>
+    buildDashboardHref(p, toIsoDate(date), selectedCategoryIds);
+
   // Todos los totales se expresan en la moneda por defecto de la configuración.
   const fx: ReportCurrency = {
     target: settings.defaultCurrency,
@@ -67,7 +85,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const symbol = CURRENCY_SYMBOL[settings.defaultCurrency];
   const money = (amount: number) => formatMoneyWithSymbol(amount, symbol);
 
-  const expenses = toReportCurrencyExpenses(
+  const allExpenses = toReportCurrencyExpenses(
     expenseRows.map((e) => ({
       amount: e.amount.toNumber(),
       currency: e.currency,
@@ -77,8 +95,9 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     })),
     fx,
   );
+  const expenses = filterExpensesByCategories(allExpenses, selectedCategoryIds);
 
-  const budgets = toReportCurrencyBudgets(
+  const allBudgets = toReportCurrencyBudgets(
     budgetRows.map((b) => ({
       id: b.id,
       name: b.name,
@@ -90,6 +109,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     })),
     fx,
   );
+  const budgets = filterBudgetsByCategories(allBudgets, selectedCategoryIds);
 
   const total = sumAmounts(expenses);
   const categories = aggregateByCategory(expenses);
@@ -159,6 +179,14 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
               </Link>
             </div>
           </div>
+
+          <FiltroCategorias
+            key={`${period}|${toIsoDate(reference)}|${selectedCategoryIds.join(",")}`}
+            categories={categoryRows}
+            selectedIds={selectedCategoryIds}
+            period={period}
+            fecha={toIsoDate(reference)}
+          />
         </header>
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
