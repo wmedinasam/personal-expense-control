@@ -55,16 +55,23 @@ export function todayUtcDate(now: Date = new Date()): Date {
   return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 }
 
-/** Convierte "YYYY-MM-DD" a Date UTC; null si no es una fecha real. */
-function parseIsoDate(value: string): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const date = new Date(`${value}T00:00:00Z`);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toISOString().slice(0, 10) === value ? date : null;
+/** Convierte "dd/mm/aaaa" (día y mes de 1 o 2 dígitos) a Date UTC; null si no es una fecha real (p. ej. 31/02/2026). */
+export function parseFormDate(value: string): Date | null {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value.trim());
+  if (!match) return null;
+  const [day, month, year] = match.slice(1).map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const real =
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
+  return real ? date : null;
 }
 
-export function formatIsoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
+/** Fecha `@db.Date` (medianoche UTC) como "dd/mm/aaaa" para el formulario. */
+export function formatFormDate(date: Date): string {
+  const [year, month, day] = date.toISOString().slice(0, 10).split("-");
+  return `${day}/${month}/${year}`;
 }
 
 export function readRawBudgetInput(formData: FormData): RawBudgetInput {
@@ -118,13 +125,19 @@ export async function validateBudgetInput(
     return { ok: false, error: "La moneda no es válida." };
   }
 
-  const startDate = parseIsoDate(raw.startDate);
+  const startDate = parseFormDate(raw.startDate);
   if (!startDate) {
-    return { ok: false, error: "La fecha de inicio no es válida." };
+    return {
+      ok: false,
+      error: "La fecha de inicio no es válida. Usa el formato dd/mm/aaaa con una fecha real.",
+    };
   }
-  const endDate = parseIsoDate(raw.endDate);
+  const endDate = parseFormDate(raw.endDate);
   if (!endDate) {
-    return { ok: false, error: "La fecha de fin no es válida." };
+    return {
+      ok: false,
+      error: "La fecha de fin no es válida. Usa el formato dd/mm/aaaa con una fecha real.",
+    };
   }
   if (endDate.getTime() < startDate.getTime()) {
     return {

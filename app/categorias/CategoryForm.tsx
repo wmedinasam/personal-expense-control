@@ -42,7 +42,7 @@ export default function CategoryForm({ category, onCancel, onSaved }: Props) {
       {category && <input type="hidden" name="id" value={category.id} />}
 
       <div>
-        <label htmlFor={`name-${category?.id ?? "new"}`} className="block text-sm font-medium text-slate-700">
+        <label htmlFor={`name-${category?.id ?? "new"}`} className="block text-sm font-medium text-slate-700 dark:text-slate-300">
           Nombre
         </label>
         <input
@@ -54,12 +54,12 @@ export default function CategoryForm({ category, onCancel, onSaved }: Props) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Por ejemplo, Alimentación"
-          className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="mt-1 block w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-slate-500 dark:focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 dark:focus:ring-slate-400"
         />
       </div>
 
       <fieldset>
-        <legend className="block text-sm font-medium text-slate-700">Color</legend>
+        <legend className="block text-sm font-medium text-slate-700 dark:text-slate-300">Color</legend>
         <div className="mt-2 flex flex-wrap gap-3">
           {CATEGORY_COLORS.map((c) => (
             <label key={c.hex} className="cursor-pointer">
@@ -73,7 +73,7 @@ export default function CategoryForm({ category, onCancel, onSaved }: Props) {
                 className="peer sr-only"
               />
               <span
-                className="block h-7 w-7 rounded-full ring-offset-2 ring-offset-white ring-slate-900 peer-checked:ring-2 peer-focus-visible:ring-2"
+                className="block h-7 w-7 rounded-full ring-offset-2 ring-offset-white ring-slate-900 dark:ring-slate-100 peer-checked:ring-2 peer-focus-visible:ring-2"
                 style={{ backgroundColor: c.hex }}
               />
             </label>
@@ -82,12 +82,12 @@ export default function CategoryForm({ category, onCancel, onSaved }: Props) {
       </fieldset>
 
       {errorMessage && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {errorMessage}
         </p>
       )}
       {successMessage && (
-        <p role="status" className="text-sm text-emerald-700">
+        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">
           {successMessage}
         </p>
       )}
@@ -96,7 +96,7 @@ export default function CategoryForm({ category, onCancel, onSaved }: Props) {
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex items-center rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center rounded-md bg-slate-900 dark:bg-slate-100 px-3 py-2 text-sm font-medium text-white dark:text-neutral-950 shadow-sm hover:bg-slate-700 dark:hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear categoría"}
         </button>
@@ -104,7 +104,7 @@ export default function CategoryForm({ category, onCancel, onSaved }: Props) {
           <button
             type="button"
             onClick={onCancel}
-            className="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            className="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             Cancelar
           </button>

@@ -22,7 +22,7 @@ export type FormBudget = {
 const initialState: BudgetFormState = { error: null };
 
 const inputClass =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500";
+  "w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-slate-500 dark:focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 dark:focus:ring-slate-400";
 
 const currencies = Object.keys(CURRENCY_LABEL) as Currency[];
 
@@ -48,9 +48,9 @@ export function BudgetForm({
   return (
     <form
       action={formAction}
-      className="space-y-4 rounded-lg border border-slate-200 bg-white p-5"
+      className="space-y-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-5"
     >
-      <h2 className="text-base font-semibold text-slate-900">
+      <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
         {budget ? "Editar presupuesto" : "Nuevo presupuesto"}
       </h2>
 
@@ -59,14 +59,14 @@ export function BudgetForm({
       {state.error && (
         <p
           role="alert"
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-700 dark:text-red-300"
         >
           {state.error}
         </p>
       )}
 
       <div className="space-y-1">
-        <label htmlFor="name" className="text-sm font-medium text-slate-700">
+        <label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300">
           Nombre
         </label>
         <input
@@ -82,7 +82,7 @@ export function BudgetForm({
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="amount" className="text-sm font-medium text-slate-700">
+        <label htmlFor="amount" className="text-sm font-medium text-slate-700 dark:text-slate-300">
           Monto
         </label>
         <input
@@ -98,7 +98,7 @@ export function BudgetForm({
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="currency" className="text-sm font-medium text-slate-700">
+        <label htmlFor="currency" className="text-sm font-medium text-slate-700 dark:text-slate-300">
           Moneda
         </label>
         <select
@@ -117,27 +117,35 @@ export function BudgetForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label htmlFor="startDate" className="text-sm font-medium text-slate-700">
+          <label htmlFor="startDate" className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Inicio
           </label>
           <input
             id="startDate"
             name="startDate"
-            type="date"
+            type="text"
+            inputMode="numeric"
             required
+            placeholder="dd/mm/aaaa"
+            pattern="\d{1,2}/\d{1,2}/\d{4}"
+            title="Fecha en formato dd/mm/aaaa"
             defaultValue={values?.startDate ?? budget?.startDate ?? ""}
             className={inputClass}
           />
         </div>
         <div className="space-y-1">
-          <label htmlFor="endDate" className="text-sm font-medium text-slate-700">
+          <label htmlFor="endDate" className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Fin
           </label>
           <input
             id="endDate"
             name="endDate"
-            type="date"
+            type="text"
+            inputMode="numeric"
             required
+            placeholder="dd/mm/aaaa"
+            pattern="\d{1,2}/\d{1,2}/\d{4}"
+            title="Fecha en formato dd/mm/aaaa"
             defaultValue={values?.endDate ?? budget?.endDate ?? ""}
             className={inputClass}
           />
@@ -145,25 +153,25 @@ export function BudgetForm({
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-slate-700">Categorías</legend>
-        <p className="text-xs text-slate-500">
+        <legend className="text-sm font-medium text-slate-700 dark:text-slate-300">Categorías</legend>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Sin categorías seleccionadas, el presupuesto aplica a todos los gastos.
         </p>
         {categories.length === 0 ? (
-          <p className="text-sm text-slate-500">No hay categorías creadas.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No hay categorías creadas.</p>
         ) : (
-          <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-slate-200 p-2">
+          <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-slate-200 dark:border-slate-800 p-2">
             {categories.map((category) => (
               <label
                 key={category.id}
-                className="flex items-center gap-2 rounded px-1 py-1 text-sm text-slate-800 hover:bg-slate-50"
+                className="flex items-center gap-2 rounded px-1 py-1 text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900"
               >
                 <input
                   type="checkbox"
                   name="categoryIds"
                   value={category.id}
                   defaultChecked={selectedCategories.includes(category.id)}
-                  className="h-4 w-4 rounded border-slate-300"
+                  className="h-4 w-4 rounded border-slate-300 dark:border-slate-700"
                 />
                 <span
                   aria-hidden
@@ -181,7 +189,7 @@ export function BudgetForm({
         {budget && (
           <Link
             href="/presupuestos"
-            className="text-sm text-slate-600 hover:text-slate-900 hover:underline"
+            className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:underline"
           >
             Cancelar
           </Link>
@@ -189,7 +197,7 @@ export function BudgetForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-60"
+          className="rounded-md bg-slate-900 dark:bg-slate-100 px-4 py-2 text-sm font-medium text-white dark:text-neutral-950 hover:bg-slate-700 dark:hover:bg-slate-300 disabled:opacity-60"
         >
           {pending ? "Guardando…" : budget ? "Guardar cambios" : "Crear presupuesto"}
         </button>

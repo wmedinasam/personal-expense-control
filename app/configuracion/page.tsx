@@ -41,7 +41,7 @@ export default async function ConfiguracionPage() {
           />
         </label>
 
-        <button type="submit" className="rounded bg-black px-4 py-2 text-white">
+        <button type="submit" className="rounded bg-black dark:bg-white px-4 py-2 text-white dark:text-neutral-950">
           Guardar
         </button>
       </form>

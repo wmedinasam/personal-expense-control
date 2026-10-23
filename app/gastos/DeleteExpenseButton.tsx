@@ -28,7 +28,7 @@ export default function DeleteExpenseButton({ id }: { id: string }) {
       >
         {pending ? "Borrando…" : "Borrar"}
       </button>
-      {error && <span className="text-xs text-red-600">{error}</span>}
+      {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
     </>
   );
 }

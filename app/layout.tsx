@@ -32,15 +32,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <nav className="border-b">
+        <nav className="border-b border-neutral-800 bg-neutral-950">
           <ul className="mx-auto flex max-w-5xl flex-wrap gap-4 px-6 py-3 text-sm">
             {LINKS.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="hover:underline">
+                <Link href={l.href} className="text-neutral-300 hover:text-white hover:underline">
                   {l.label}
                 </Link>
               </li>

@@ -12,7 +12,9 @@ import {
 } from "recharts";
 import { formatMoney, formatMoneyWithSymbol } from "@/lib/reports";
 
-const AXIS_TICK = { fontSize: 12, fill: "#71717a" };
+const TOOLTIP_STYLE = { backgroundColor: "#18181b", border: "1px solid #3f3f46", color: "#f4f4f5" };
+
+const AXIS_TICK = { fontSize: 12, fill: "#a1a1aa" };
 
 export function TendenciaChart({
   data,
@@ -25,7 +27,7 @@ export function TendenciaChart({
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid vertical={false} stroke="#e4e4e7" />
+          <CartesianGrid vertical={false} stroke="#27272a" />
           <XAxis
             dataKey="label"
             tick={AXIS_TICK}
@@ -42,10 +44,12 @@ export function TendenciaChart({
             tickFormatter={(value) => formatMoney(Number(value))}
           />
           <Tooltip
-            cursor={{ fill: "#f4f4f5" }}
+            contentStyle={TOOLTIP_STYLE}
+            itemStyle={{ color: "#f4f4f5" }}
+            cursor={{ fill: "#27272a" }}
             formatter={(value) => formatMoneyWithSymbol(Number(value), symbol)}
           />
-          <Bar dataKey="total" name="Gasto" fill="#334155" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="total" name="Gasto" fill="#94a3b8" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -70,7 +74,7 @@ export function CategoriasChart({
           layout="vertical"
           margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
         >
-          <CartesianGrid horizontal={false} stroke="#e4e4e7" />
+          <CartesianGrid horizontal={false} stroke="#27272a" />
           <XAxis
             type="number"
             tick={AXIS_TICK}
@@ -87,7 +91,9 @@ export function CategoriasChart({
             width={96}
           />
           <Tooltip
-            cursor={{ fill: "#f4f4f5" }}
+            contentStyle={TOOLTIP_STYLE}
+            itemStyle={{ color: "#f4f4f5" }}
+            cursor={{ fill: "#27272a" }}
             formatter={(value) => formatMoneyWithSymbol(Number(value), symbol)}
           />
           <Bar dataKey="total" name="Gasto" radius={[0, 3, 3, 0]}>
