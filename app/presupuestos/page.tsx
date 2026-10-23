@@ -9,6 +9,7 @@ import {
 } from "@/lib/budgets";
 import { BudgetForm } from "./_components/budget-form";
 import { DeleteBudgetButton } from "./_components/delete-budget-button";
+import { getSettings } from "@/lib/settings";
 import { formatDate, formatMoney } from "./format";
 
 // Consulta la base de datos en cada petición: el consumo depende de la fecha de hoy.
@@ -23,17 +24,19 @@ export default async function PresupuestosPage({ searchParams }: PageProps) {
   const editId = typeof editar === "string" ? editar : null;
   const today = todayUtcDate();
 
-  const [budgets, categories, editing] = await Promise.all([
-    listBudgetViews(today),
+  const [settings, categories, editing] = await Promise.all([
+    getSettings(),
     listCategories(),
     editId ? getBudgetById(editId) : Promise.resolve(null),
   ]);
+  const budgets = await listBudgetViews(today, settings.usdToGtq);
 
   const formBudget = editing
     ? {
         id: editing.id,
         name: editing.name,
         amount: editing.amount.toFixed(2),
+        currency: editing.currency,
         startDate: formatIsoDate(editing.startDate),
         endDate: formatIsoDate(editing.endDate),
         categoryIds: editing.categories.map((c) => c.id),
@@ -47,7 +50,8 @@ export default async function PresupuestosPage({ searchParams }: PageProps) {
           <h1 className="text-2xl font-semibold tracking-tight">Presupuestos</h1>
           <p className="mt-1 text-sm text-slate-600">
             El consumo se calcula con los gastos registrados entre las fechas del
-            presupuesto y de sus categorías.
+            presupuesto y de sus categorías. Los gastos en otra moneda se convierten
+            con el tipo de cambio de Configuración.
           </p>
         </header>
 
@@ -57,6 +61,7 @@ export default async function PresupuestosPage({ searchParams }: PageProps) {
               key={formBudget?.id ?? "nuevo"}
               categories={categories}
               budget={formBudget}
+              defaultCurrency={settings.defaultCurrency}
             />
           </aside>
 
@@ -139,7 +144,8 @@ function BudgetCard({ budget, isEditing }: { budget: BudgetView; isEditing: bool
       <div className="mt-4">
         <div className="flex items-baseline justify-between text-sm">
           <span className="font-medium">
-            {formatMoney(c.spent)} <span className="text-slate-500">de {formatMoney(budget.amount)}</span>
+            {formatMoney(c.spent, budget.currency)}{" "}
+            <span className="text-slate-500">de {formatMoney(budget.amount, budget.currency)}</span>
           </span>
           <span className="tabular-nums text-slate-600">{c.percentUsed.toFixed(0)}%</span>
         </div>
@@ -159,7 +165,7 @@ function BudgetCard({ budget, isEditing }: { budget: BudgetView; isEditing: bool
         <div>
           <dt className="text-slate-500">Restante</dt>
           <dd className={`font-medium tabular-nums ${overBudget ? "text-red-600" : ""}`}>
-            {formatMoney(c.remaining)}
+            {formatMoney(c.remaining, budget.currency)}
           </dd>
         </div>
         <div>
@@ -167,7 +173,7 @@ function BudgetCard({ budget, isEditing }: { budget: BudgetView; isEditing: bool
           <dd className="font-medium tabular-nums">
             {c.suggestedDailyPace === null
               ? "—"
-              : `${formatMoney(c.suggestedDailyPace)} / día`}
+              : `${formatMoney(c.suggestedDailyPace, budget.currency)} / día`}
           </dd>
         </div>
         <div>
@@ -182,7 +188,7 @@ function BudgetCard({ budget, isEditing }: { budget: BudgetView; isEditing: bool
 
       {overBudget && (
         <p className="mt-3 text-sm text-red-600">
-          Presupuesto superado en {formatMoney(-c.remaining)}.
+          Presupuesto superado en {formatMoney(-c.remaining, budget.currency)}.
         </p>
       )}
     </article>

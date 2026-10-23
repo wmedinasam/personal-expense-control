@@ -1,3 +1,4 @@
+import { Currency, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import {
   computeBudgetConsumption,
@@ -11,6 +12,7 @@ const MAX_NAME_LENGTH = 80;
 export type RawBudgetInput = {
   name: string;
   amount: string;
+  currency: string;
   startDate: string;
   endDate: string;
   categoryIds: string[];
@@ -24,6 +26,7 @@ export type BudgetFormState = {
 export type ValidBudgetInput = {
   name: string;
   amount: number;
+  currency: Currency;
   startDate: Date;
   endDate: Date;
   categoryIds: string[];
@@ -33,6 +36,7 @@ export type BudgetView = {
   id: string;
   name: string;
   amount: number;
+  currency: Currency;
   startDate: Date;
   endDate: Date;
   categoryIds: string[];
@@ -67,6 +71,7 @@ export function readRawBudgetInput(formData: FormData): RawBudgetInput {
   return {
     name: String(formData.get("name") ?? ""),
     amount: String(formData.get("amount") ?? ""),
+    currency: String(formData.get("currency") ?? ""),
     startDate: String(formData.get("startDate") ?? ""),
     endDate: String(formData.get("endDate") ?? ""),
     categoryIds: formData
@@ -109,6 +114,10 @@ export async function validateBudgetInput(
     return { ok: false, error: "El monto es demasiado grande." };
   }
 
+  if (!Object.values(Currency).includes(raw.currency as Currency)) {
+    return { ok: false, error: "La moneda no es válida." };
+  }
+
   const startDate = parseIsoDate(raw.startDate);
   if (!startDate) {
     return { ok: false, error: "La fecha de inicio no es válida." };
@@ -139,7 +148,14 @@ export async function validateBudgetInput(
 
   return {
     ok: true,
-    data: { name, amount, startDate, endDate, categoryIds },
+    data: {
+      name,
+      amount,
+      currency: raw.currency as Currency,
+      startDate,
+      endDate,
+      categoryIds,
+    },
   };
 }
 
@@ -153,8 +169,12 @@ export async function listCategories(): Promise<CategoryOption[]> {
 /**
  * Lista los presupuestos con su consumo calculado al momento de la consulta.
  * Hace una sola consulta de gastos que cubre el rango de todos los presupuestos.
+ * `usdToGtq` es el tipo de cambio de la configuración (quetzales por dólar).
  */
-export async function listBudgetViews(today: Date): Promise<BudgetView[]> {
+export async function listBudgetViews(
+  today: Date,
+  usdToGtq: Prisma.Decimal,
+): Promise<BudgetView[]> {
   const budgets = await prisma.budget.findMany({
     include: { categories: { select: { id: true, name: true } } },
     orderBy: [{ startDate: "desc" }, { name: "asc" }],
@@ -168,10 +188,11 @@ export async function listBudgetViews(today: Date): Promise<BudgetView[]> {
 
   const expenses = await prisma.expense.findMany({
     where: { date: { gte: rangeStart, lte: rangeEnd } },
-    select: { amount: true, date: true, categoryId: true },
+    select: { amount: true, currency: true, date: true, categoryId: true },
   });
   const expenseItems = expenses.map((e) => ({
     amount: e.amount.toNumber(),
+    currency: e.currency,
     date: e.date,
     categoryId: e.categoryId,
   }));
@@ -182,6 +203,7 @@ export async function listBudgetViews(today: Date): Promise<BudgetView[]> {
       id: budget.id,
       name: budget.name,
       amount,
+      currency: budget.currency,
       startDate: budget.startDate,
       endDate: budget.endDate,
       categoryIds: budget.categories.map((c) => c.id),
@@ -189,12 +211,14 @@ export async function listBudgetViews(today: Date): Promise<BudgetView[]> {
       consumption: computeBudgetConsumption(
         {
           amount,
+          currency: budget.currency,
           startDate: budget.startDate,
           endDate: budget.endDate,
           categoryIds: budget.categories.map((c) => c.id),
         },
         expenseItems,
         today,
+        usdToGtq,
       ),
     };
   });

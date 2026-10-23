@@ -7,10 +7,16 @@
  *   `@db.Date` desde Prisma, a medianoche UTC). Los rangos son inclusivos.
  * - Los importes se operan en céntimos para evitar errores de coma flotante.
  * - Un presupuesto sin categorías aplica a todos los gastos.
+ * - Cada gasto se convierte a la moneda del presupuesto con `convertAmount`,
+ *   usando el tipo de cambio que llega por parámetro (quetzales por dólar).
  */
+
+import { Prisma, type Currency } from "@prisma/client";
+import { convertAmount } from "@/lib/currency";
 
 export type BudgetForConsumption = {
   amount: number;
+  currency: Currency;
   startDate: Date;
   endDate: Date;
   /** Vacío = el presupuesto aplica a todas las categorías. */
@@ -19,6 +25,7 @@ export type BudgetForConsumption = {
 
 export type ExpenseForConsumption = {
   amount: number;
+  currency: Currency;
   date: Date;
   categoryId: string;
 };
@@ -58,6 +65,7 @@ export function computeBudgetConsumption(
   budget: BudgetForConsumption,
   expenses: readonly ExpenseForConsumption[],
   today: Date,
+  usdToGtq: Prisma.Decimal,
 ): BudgetConsumption {
   const startDay = toDayNumber(budget.startDate);
   const endDay = toDayNumber(budget.endDate);
@@ -73,7 +81,13 @@ export function computeBudgetConsumption(
     const day = toDayNumber(expense.date);
     if (day < startDay || day > endDay) continue;
     if (!appliesToAllCategories && !categorySet.has(expense.categoryId)) continue;
-    spentCents += toCents(expense.amount);
+    const converted = convertAmount(
+      new Prisma.Decimal(expense.amount),
+      expense.currency,
+      budget.currency,
+      usdToGtq,
+    );
+    spentCents += toCents(converted.toNumber());
   }
 
   const budgetCents = toCents(budget.amount);

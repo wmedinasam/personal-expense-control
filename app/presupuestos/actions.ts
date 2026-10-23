@@ -20,11 +20,12 @@ export async function createBudget(
   const result = await validateBudgetInput(raw);
   if (!result.ok) return { error: result.error, values: raw };
 
-  const { name, amount, startDate, endDate, categoryIds } = result.data;
+  const { name, amount, currency, startDate, endDate, categoryIds } = result.data;
   await prisma.budget.create({
     data: {
       name,
       amount,
+      currency,
       startDate,
       endDate,
       categories: { connect: categoryIds.map((id) => ({ id })) },
@@ -50,12 +51,13 @@ export async function updateBudget(
   const result = await validateBudgetInput(raw);
   if (!result.ok) return { error: result.error, values: raw };
 
-  const { name, amount, startDate, endDate, categoryIds } = result.data;
+  const { name, amount, currency, startDate, endDate, categoryIds } = result.data;
   await prisma.budget.update({
     where: { id },
     data: {
       name,
       amount,
+      currency,
       startDate,
       endDate,
       categories: { set: categoryIds.map((categoryId) => ({ id: categoryId })) },

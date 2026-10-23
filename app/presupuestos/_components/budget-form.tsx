@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { createBudget, updateBudget } from "../actions";
+import type { Currency } from "@prisma/client";
 import type { BudgetFormState, RawBudgetInput } from "@/lib/budgets";
+import { CURRENCY_LABEL } from "@/lib/currency";
 
 export type FormCategory = { id: string; name: string; color: string };
 
@@ -11,6 +13,7 @@ export type FormBudget = {
   id: string;
   name: string;
   amount: string;
+  currency: Currency;
   startDate: string;
   endDate: string;
   categoryIds: string[];
@@ -21,12 +24,17 @@ const initialState: BudgetFormState = { error: null };
 const inputClass =
   "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500";
 
+const currencies = Object.keys(CURRENCY_LABEL) as Currency[];
+
 export function BudgetForm({
   categories,
   budget,
+  defaultCurrency,
 }: {
   categories: FormCategory[];
   budget?: FormBudget;
+  /** Moneda por defecto de la configuración; se preselecciona en presupuestos nuevos. */
+  defaultCurrency: Currency;
 }) {
   const action = budget ? updateBudget : createBudget;
   const [state, formAction, pending] = useActionState(action, initialState);
@@ -87,6 +95,24 @@ export function BudgetForm({
           defaultValue={values?.amount ?? budget?.amount ?? ""}
           className={inputClass}
         />
+      </div>
+
+      <div className="space-y-1">
+        <label htmlFor="currency" className="text-sm font-medium text-slate-700">
+          Moneda
+        </label>
+        <select
+          id="currency"
+          name="currency"
+          defaultValue={values?.currency ?? budget?.currency ?? defaultCurrency}
+          className={inputClass}
+        >
+          {currencies.map((currency) => (
+            <option key={currency} value={currency}>
+              {CURRENCY_LABEL[currency]}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
