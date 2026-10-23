@@ -5,6 +5,7 @@ import { deleteCategory } from "./actions";
 import CategoryForm from "./CategoryForm";
 import CategoryIcon from "./CategoryIcon";
 import type { CategoryListItem } from "./shared";
+import { AuditStamp } from "@/app/_components/AuditStamp";
 
 export default function CategoryRow({ category }: { category: CategoryListItem }) {
   const [editing, setEditing] = useState(false);
@@ -36,6 +37,7 @@ export default function CategoryRow({ category }: { category: CategoryListItem }
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{category.name}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{usage}</p>
+            <AuditStamp record={category} />
           </div>
         </div>
 

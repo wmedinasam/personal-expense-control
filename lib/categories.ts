@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { WHO_INCLUDE } from "@/lib/audit";
 import {
   HEX_COLOR_RE,
   NAME_MAX_LENGTH,
@@ -62,6 +63,9 @@ export async function listCategoriesWithUsage(): Promise<CategoryListItem[]> {
       color: true,
       icon: true,
       _count: { select: { expenses: true } },
+      createdAt: true,
+      updatedAt: true,
+      ...WHO_INCLUDE,
     },
   });
   return rows.map((r) => ({
@@ -70,6 +74,10 @@ export async function listCategoriesWithUsage(): Promise<CategoryListItem[]> {
     color: r.color,
     icon: r.icon,
     expenseCount: r._count.expenses,
+    createdAt: r.createdAt,
+    createdBy: r.createdBy,
+    updatedAt: r.updatedAt,
+    updatedBy: r.updatedBy,
   }));
 }
 
