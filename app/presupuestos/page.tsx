@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  formatIsoDate,
+  formatFormDate,
   getBudgetById,
   listBudgetViews,
   listCategories,
@@ -37,8 +37,8 @@ export default async function PresupuestosPage({ searchParams }: PageProps) {
         name: editing.name,
         amount: editing.amount.toFixed(2),
         currency: editing.currency,
-        startDate: formatIsoDate(editing.startDate),
-        endDate: formatIsoDate(editing.endDate),
+        startDate: formatFormDate(editing.startDate),
+        endDate: formatFormDate(editing.endDate),
         categoryIds: editing.categories.map((c) => c.id),
       }
     : undefined;

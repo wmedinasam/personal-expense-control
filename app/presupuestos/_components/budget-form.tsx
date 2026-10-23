@@ -123,8 +123,12 @@ export function BudgetForm({
           <input
             id="startDate"
             name="startDate"
-            type="date"
+            type="text"
+            inputMode="numeric"
             required
+            placeholder="dd/mm/aaaa"
+            pattern="\d{1,2}/\d{1,2}/\d{4}"
+            title="Fecha en formato dd/mm/aaaa"
             defaultValue={values?.startDate ?? budget?.startDate ?? ""}
             className={inputClass}
           />
@@ -136,8 +140,12 @@ export function BudgetForm({
           <input
             id="endDate"
             name="endDate"
-            type="date"
+            type="text"
+            inputMode="numeric"
             required
+            placeholder="dd/mm/aaaa"
+            pattern="\d{1,2}/\d{1,2}/\d{4}"
+            title="Fecha en formato dd/mm/aaaa"
             defaultValue={values?.endDate ?? budget?.endDate ?? ""}
             className={inputClass}
           />
