@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuditStamp } from "@/app/_components/AuditStamp";
 import CategoryIcon from "@/app/categorias/CategoryIcon";
 import { prisma } from "@/lib/db";
 import {
@@ -231,6 +232,7 @@ export default async function GastosPage({
                   <p className="truncate text-sm text-neutral-600 dark:text-neutral-400">
                     {expense.description || "Sin descripción"}
                   </p>
+                  <AuditStamp record={expense} />
                 </div>
                 <div className="text-sm font-medium tabular-nums">
                   {formatMoney(expense.amount, expense.currency)}

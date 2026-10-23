@@ -1,4 +1,5 @@
 import { Prisma, type Currency } from "@prisma/client";
+import { audit, WHO_INCLUDE } from "@/lib/audit";
 import { CURRENCY_SYMBOL, convertAmount } from "@/lib/currency";
 import { prisma } from "@/lib/db";
 import type { AppSettings } from "@/lib/settings";
@@ -143,16 +144,36 @@ function buildWhere(filters: ExpenseFilters): Prisma.ExpenseWhereInput {
   };
 }
 
-export function createExpense(data: ExpenseData) {
-  return prisma.expense.create({ data });
+export function createExpense(data: ExpenseData, userId: string) {
+  return prisma.$transaction(async (tx) => {
+    const after = await tx.expense.create({
+      data: { ...data, createdById: userId, updatedById: userId },
+    });
+    await audit(tx, { userId, action: "CREATE", entity: "Expense", entityId: after.id, after });
+    return after;
+  });
 }
 
-export function updateExpense(id: string, data: ExpenseData) {
-  return prisma.expense.update({ where: { id }, data });
+/** Lanza P2025 (Prisma) si el gasto no existe. */
+export function updateExpense(id: string, data: ExpenseData, userId: string) {
+  return prisma.$transaction(async (tx) => {
+    const before = await tx.expense.findUniqueOrThrow({ where: { id } });
+    const after = await tx.expense.update({
+      where: { id },
+      data: { ...data, updatedById: userId },
+    });
+    await audit(tx, { userId, action: "UPDATE", entity: "Expense", entityId: id, before, after });
+    return after;
+  });
 }
 
-export function deleteExpense(id: string) {
-  return prisma.expense.delete({ where: { id } });
+/** Lanza P2025 (Prisma) si el gasto no existe. */
+export function deleteExpense(id: string, userId: string) {
+  return prisma.$transaction(async (tx) => {
+    const before = await tx.expense.delete({ where: { id } });
+    await audit(tx, { userId, action: "DELETE", entity: "Expense", entityId: id, before });
+    return before;
+  });
 }
 
 export function getExpense(id: string) {
@@ -162,7 +183,10 @@ export function getExpense(id: string) {
 export function listExpenses(filters: ExpenseFilters) {
   return prisma.expense.findMany({
     where: buildWhere(filters),
-    include: { category: { select: { name: true, color: true, icon: true } } },
+    include: {
+      category: { select: { name: true, color: true, icon: true } },
+      ...WHO_INCLUDE,
+    },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
   });
 }
