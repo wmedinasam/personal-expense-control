@@ -71,7 +71,7 @@ export default async function RootLayout({
         <nav className="border-b border-neutral-800 bg-neutral-950">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-3 text-sm">
             <ul className="flex flex-wrap gap-4">
-              {LINKS.map((l) => (
+              {(user.role === "ADMIN" ? [...LINKS, { href: "/auditoria", label: "Auditoría" }] : LINKS).map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} className="text-neutral-300 hover:text-white hover:underline">
                     {l.label}
