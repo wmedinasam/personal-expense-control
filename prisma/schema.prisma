@@ -56,3 +56,51 @@ model Budget {
 
   @@index([startDate, endDate])
 }
+
+// --- Usuarios (Auth.js) ---
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+// PENDING: creó su cuenta con Google y espera aprobación de un admin.
+enum UserStatus {
+  PENDING
+  ACTIVE
+  DISABLED
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role       @default(MEMBER)
+  status        UserStatus @default(PENDING)
+  lastLoginAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  accounts      Account[]
+}
+
+// Cuenta externa enlazada (Google). Campos que exige el adaptador de Prisma de Auth.js.
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
