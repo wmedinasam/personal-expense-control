@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CategoryIcon from "@/app/categorias/CategoryIcon";
 import {
   formatIsoDate,
   getBudgetById,
@@ -119,12 +120,13 @@ function BudgetCard({ budget, isEditing }: { budget: BudgetView; isEditing: bool
             {formatDate(budget.startDate)} – {formatDate(budget.endDate)}
           </p>
           <p className="mt-1 flex flex-wrap gap-1 text-xs text-slate-600 dark:text-slate-400">
-            {budget.categoryNames.length === 0 ? (
+            {budget.categories.length === 0 ? (
               <span className="rounded bg-slate-100 dark:bg-slate-900 px-2 py-0.5">Todas las categorías</span>
             ) : (
-              budget.categoryNames.map((name) => (
-                <span key={name} className="rounded bg-slate-100 dark:bg-slate-900 px-2 py-0.5">
-                  {name}
+              budget.categories.map((c) => (
+                <span key={c.id} className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-900 px-2 py-0.5">
+                  <CategoryIcon icon={c.icon} color={c.color} size={12} />
+                  {c.name}
                 </span>
               ))
             )}

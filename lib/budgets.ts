@@ -40,7 +40,7 @@ export type BudgetView = {
   startDate: Date;
   endDate: Date;
   categoryIds: string[];
-  categoryNames: string[];
+  categories: CategoryOption[];
   consumption: BudgetConsumption;
 };
 
@@ -48,6 +48,7 @@ export type CategoryOption = {
   id: string;
   name: string;
   color: string;
+  icon: string | null;
 };
 
 /** Fecha de hoy como medianoche UTC, según el calendario del servidor. */
@@ -161,7 +162,7 @@ export async function validateBudgetInput(
 
 export async function listCategories(): Promise<CategoryOption[]> {
   return prisma.category.findMany({
-    select: { id: true, name: true, color: true },
+    select: { id: true, name: true, color: true, icon: true },
     orderBy: { name: "asc" },
   });
 }
@@ -176,7 +177,7 @@ export async function listBudgetViews(
   usdToGtq: Prisma.Decimal,
 ): Promise<BudgetView[]> {
   const budgets = await prisma.budget.findMany({
-    include: { categories: { select: { id: true, name: true } } },
+    include: { categories: { select: { id: true, name: true, color: true, icon: true } } },
     orderBy: [{ startDate: "desc" }, { name: "asc" }],
   });
   if (budgets.length === 0) return [];
@@ -207,7 +208,7 @@ export async function listBudgetViews(
       startDate: budget.startDate,
       endDate: budget.endDate,
       categoryIds: budget.categories.map((c) => c.id),
-      categoryNames: budget.categories.map((c) => c.name),
+      categories: budget.categories,
       consumption: computeBudgetConsumption(
         {
           amount,

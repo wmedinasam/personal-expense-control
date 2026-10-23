@@ -30,7 +30,7 @@ export interface ExpenseRecord {
   currency: CurrencyCode;
   date: Date;
   categoryId: string;
-  category: { id: string; name: string; color: string };
+  category: { id: string; name: string; color: string; icon: string | null };
 }
 
 export interface BudgetRecord {
@@ -47,6 +47,7 @@ export interface CategoryTotal {
   categoryId: string;
   name: string;
   color: string;
+  icon: string | null;
   total: number;
   count: number;
   share: number; // fracción entre 0 y 1
@@ -280,13 +281,14 @@ export function sumAmounts(expenses: ExpenseRecord[]): number {
 export function aggregateByCategory(expenses: ExpenseRecord[]): CategoryTotal[] {
   const groups = new Map<
     string,
-    { name: string; color: string; cents: number; count: number }
+    { name: string; color: string; icon: string | null; cents: number; count: number }
   >();
 
   for (const e of expenses) {
     const current = groups.get(e.categoryId) ?? {
       name: e.category.name,
       color: e.category.color,
+      icon: e.category.icon,
       cents: 0,
       count: 0,
     };
@@ -302,6 +304,7 @@ export function aggregateByCategory(expenses: ExpenseRecord[]): CategoryTotal[] 
       categoryId,
       name: g.name,
       color: g.color,
+      icon: g.icon,
       total: fromCents(g.cents),
       count: g.count,
       share: totalCents === 0 ? 0 : g.cents / totalCents,

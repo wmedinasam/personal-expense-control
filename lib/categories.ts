@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import {
   HEX_COLOR_RE,
   NAME_MAX_LENGTH,
+  parseCategoryIcon,
   type CategoryFields,
   type CategoryListItem,
   type ValidationResult,
@@ -12,7 +13,7 @@ export function normalizeCategoryName(raw: string): string {
 }
 
 /**
- * Valida nombre y color. Comprueba unicidad sin distinguir mayúsculas.
+ * Valida nombre, color e ícono. Comprueba unicidad sin distinguir mayúsculas.
  * `excludeId` evita que una categoría entre en conflicto consigo misma al editarla.
  */
 export async function validateCategoryFields(
@@ -35,6 +36,9 @@ export async function validateCategoryFields(
     return { ok: false, error: "El color seleccionado no es válido." };
   }
 
+  const icon = parseCategoryIcon(input.icon);
+  if (!icon.ok) return { ok: false, error: icon.error };
+
   const conflict = await prisma.category.findFirst({
     where: {
       name: { equals: name, mode: "insensitive" },
@@ -46,7 +50,7 @@ export async function validateCategoryFields(
     return { ok: false, error: `Ya existe una categoría llamada «${name}».` };
   }
 
-  return { ok: true, data: { name, color } };
+  return { ok: true, data: { name, color, icon: icon.icon } };
 }
 
 export async function listCategoriesWithUsage(): Promise<CategoryListItem[]> {
@@ -56,6 +60,7 @@ export async function listCategoriesWithUsage(): Promise<CategoryListItem[]> {
       id: true,
       name: true,
       color: true,
+      icon: true,
       _count: { select: { expenses: true } },
     },
   });
@@ -63,6 +68,7 @@ export async function listCategoriesWithUsage(): Promise<CategoryListItem[]> {
     id: r.id,
     name: r.name,
     color: r.color,
+    icon: r.icon,
     expenseCount: r._count.expenses,
   }));
 }

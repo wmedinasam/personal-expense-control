@@ -6,8 +6,9 @@ import { createBudget, updateBudget } from "../actions";
 import type { Currency } from "@prisma/client";
 import type { BudgetFormState, RawBudgetInput } from "@/lib/budgets";
 import { CURRENCY_LABEL } from "@/lib/currency";
+import CategoryIcon from "@/app/categorias/CategoryIcon";
 
-export type FormCategory = { id: string; name: string; color: string };
+export type FormCategory = { id: string; name: string; color: string; icon: string | null };
 
 export type FormBudget = {
   id: string;
@@ -165,11 +166,7 @@ export function BudgetForm({
                   defaultChecked={selectedCategories.includes(category.id)}
                   className="h-4 w-4 rounded border-slate-300 dark:border-slate-700"
                 />
-                <span
-                  aria-hidden
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: category.color }}
-                />
+                <CategoryIcon icon={category.icon} color={category.color} />
                 {category.name}
               </label>
             ))}
