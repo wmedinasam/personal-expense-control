@@ -30,3 +30,8 @@ assert.equal(
   "Creado por — el 23/10/2026 14:05 · Modificado por luis@gmail.com el 24/10/2026 09:30",
 );
 console.log("formatAuditStamp: OK");
+assert.equal(
+  formatAuditStamp({ createdAt: c, createdBy: null, updatedAt: new Date("2026-10-24T15:30:00Z"), updatedBy: null }),
+  "Creado por — el 23/10/2026 14:05",
+);
+console.log("sin updatedBy: OK");

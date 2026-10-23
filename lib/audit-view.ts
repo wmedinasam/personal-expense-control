@@ -31,7 +31,8 @@ export function diffAudit(before: unknown, after: unknown): Change[] {
   const both = isObject(before) && isObject(after);
   const fields = [...new Set([...Object.keys(b), ...Object.keys(a)])];
   return fields
-    .filter((f) => !both || JSON.stringify(b[f]) !== JSON.stringify(a[f]))
+    // updatedAt cambia en cada edición: en un UPDATE no aporta nada.
+    .filter((f) => !both || (f !== "updatedAt" && JSON.stringify(b[f]) !== JSON.stringify(a[f])))
     .map((field) => ({ field, before: b[field], after: a[field] }));
 }
 

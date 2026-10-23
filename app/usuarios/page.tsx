@@ -1,7 +1,9 @@
+import { formatAt } from "@/lib/audit-view";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { PreauthorizeForm, UserButton } from "./UserControls";
+import { isAdminEmail } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -12,16 +14,7 @@ const STATUS = {
 } as const;
 const STATUS_ORDER = { PENDING: 0, ACTIVE: 1, DISABLED: 2 } as const;
 
-const DATE_TIME = new Intl.DateTimeFormat("es-GT", {
-  timeZone: "America/Guatemala",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
-const fmt = (d: Date | null) => (d ? DATE_TIME.format(d).replace(", ", " ") : "Nunca");
+const fmt = (d: Date | null) => (d ? formatAt(d) : "Nunca");
 
 export default async function UsuariosPage() {
   // Igual que requireAdmin(), pero a un no-admin le responde 404 en vez de lanzar un error.
@@ -83,7 +76,7 @@ export default async function UsuariosPage() {
                   </div>
                 </div>
 
-                {u.id !== me.id && (
+                {u.id !== me.id && !isAdminEmail(u.email) && (
                   <div className="flex flex-wrap items-start gap-1">
                     {u.status === "PENDING" && <UserButton id={u.id} op="approve" label="Aprobar" />}
                     {u.status === "DISABLED" ? (

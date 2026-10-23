@@ -49,3 +49,10 @@ for (const bad of ["29/02/2026", "32/01/2026", "00/01/2026", "01/13/2026", "2026
 assert.equal(formatAt(new Date("2026-10-23T20:05:00Z")), "23/10/2026 14:05");
 assert.equal(formatAt(new Date("2026-01-01T05:59:00Z")), "31/12/2025 23:59");
 console.log("check-audit-view: OK");
+
+// updatedAt no cuenta como cambio en un UPDATE
+assert.deepEqual(
+  diffAudit({ name: "A", updatedAt: "2026-10-23T00:00:00Z" }, { name: "B", updatedAt: "2026-10-24T00:00:00Z" }),
+  [{ field: "name", before: "A", after: "B" }],
+);
+console.log("updatedAt ignorado: OK");

@@ -85,8 +85,9 @@ const whoLabel = (who: Who) => (who ? (who.name ?? who.email) : "—");
 export function formatAuditStamp(r: AuditStampData): string {
   const parts: string[] = [];
   if (r.createdAt) parts.push(`Creado por ${whoLabel(r.createdBy)} el ${formatStamp(r.createdAt)}`);
+  // Sin updatedBy no se sabe quién modificó (registros de antes de la auditoría): no se muestra.
   const modified =
-    r.updatedAt && (!r.createdAt || r.updatedAt.getTime() - r.createdAt.getTime() > 1000);
+    r.updatedAt && r.updatedBy && (!r.createdAt || r.updatedAt.getTime() - r.createdAt.getTime() > 1000);
   if (modified) parts.push(`Modificado por ${whoLabel(r.updatedBy)} el ${formatStamp(r.updatedAt!)}`);
   return parts.join(" · ");
 }
