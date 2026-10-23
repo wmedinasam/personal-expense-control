@@ -17,8 +17,17 @@ export interface PeriodRange {
   label: string;
 }
 
+export type CurrencyCode = "GTQ" | "USD";
+
+/** Moneda en la que se expresan los reportes y tipo de cambio (Q por $1). */
+export interface ReportCurrency {
+  target: CurrencyCode;
+  usdToGtq: number;
+}
+
 export interface ExpenseRecord {
   amount: number;
+  currency: CurrencyCode;
   date: Date;
   categoryId: string;
   category: { id: string; name: string; color: string };
@@ -28,6 +37,7 @@ export interface BudgetRecord {
   id: string;
   name: string;
   amount: number;
+  currency: CurrencyCode;
   startDate: Date;
   endDate: Date; // incluido
   categoryIds: string[];
@@ -221,6 +231,46 @@ export function buildTrendBuckets(range: PeriodRange, granularity: Granularity):
   return buckets;
 }
 
+/**
+ * Convierte un monto entre monedas con números. Misma fórmula que
+ * `convertAmount` de lib/currency.ts, pero sin depender de Prisma.
+ * `usdToGtq` son quetzales por dólar.
+ */
+export function convertNumber(
+  amount: number,
+  from: CurrencyCode,
+  to: CurrencyCode,
+  usdToGtq: number,
+): number {
+  if (from === to) return amount;
+  if (from === "USD") return amount * usdToGtq;
+  return amount / usdToGtq; // GTQ -> USD
+}
+
+/** Devuelve los gastos expresados en la moneda de referencia. No modifica la entrada. */
+export function toReportCurrencyExpenses(
+  expenses: ExpenseRecord[],
+  fx: ReportCurrency,
+): ExpenseRecord[] {
+  return expenses.map((e) => ({
+    ...e,
+    amount: convertNumber(e.amount, e.currency, fx.target, fx.usdToGtq),
+    currency: fx.target,
+  }));
+}
+
+/** Devuelve los presupuestos con su importe en la moneda de referencia. No modifica la entrada. */
+export function toReportCurrencyBudgets(
+  budgets: BudgetRecord[],
+  fx: ReportCurrency,
+): BudgetRecord[] {
+  return budgets.map((b) => ({
+    ...b,
+    amount: convertNumber(b.amount, b.currency, fx.target, fx.usdToGtq),
+    currency: fx.target,
+  }));
+}
+
 /** Suma total de los importes, redondeada a centavos para evitar errores de coma flotante. */
 export function sumAmounts(expenses: ExpenseRecord[]): number {
   return fromCents(expenses.reduce((acc, e) => acc + toCents(e.amount), 0));
@@ -328,6 +378,11 @@ const moneyFormatter = new Intl.NumberFormat("es-ES", {
 
 export function formatMoney(amount: number): string {
   return moneyFormatter.format(amount);
+}
+
+/** Formato con símbolo de moneda, por ejemplo "Q 1.234,56". */
+export function formatMoneyWithSymbol(amount: number, symbol: string): string {
+  return `${symbol} ${moneyFormatter.format(amount)}`;
 }
 
 export function formatPercent(fraction: number): string {

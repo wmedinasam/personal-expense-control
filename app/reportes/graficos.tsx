@@ -10,14 +10,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatMoney } from "@/lib/reports";
+import { formatMoney, formatMoneyWithSymbol } from "@/lib/reports";
 
 const AXIS_TICK = { fontSize: 12, fill: "#71717a" };
 
 export function TendenciaChart({
   data,
+  symbol,
 }: {
   data: { label: string; total: number }[];
+  symbol: string;
 }) {
   return (
     <div className="h-64 w-full">
@@ -41,7 +43,7 @@ export function TendenciaChart({
           />
           <Tooltip
             cursor={{ fill: "#f4f4f5" }}
-            formatter={(value) => formatMoney(Number(value))}
+            formatter={(value) => formatMoneyWithSymbol(Number(value), symbol)}
           />
           <Bar dataKey="total" name="Gasto" fill="#334155" radius={[3, 3, 0, 0]} />
         </BarChart>
@@ -52,8 +54,10 @@ export function TendenciaChart({
 
 export function CategoriasChart({
   data,
+  symbol,
 }: {
   data: { name: string; total: number; color: string }[];
+  symbol: string;
 }) {
   return (
     <div
@@ -84,7 +88,7 @@ export function CategoriasChart({
           />
           <Tooltip
             cursor={{ fill: "#f4f4f5" }}
-            formatter={(value) => formatMoney(Number(value))}
+            formatter={(value) => formatMoneyWithSymbol(Number(value), symbol)}
           />
           <Bar dataKey="total" name="Gasto" radius={[0, 3, 3, 0]}>
             {data.map((entry) => (

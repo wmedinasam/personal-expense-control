@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { getSettings } from "@/lib/settings";
+import { CURRENCY_SYMBOL } from "@/lib/currency";
 import {
   PERIODS,
   aggregateByCategory,
   aggregateTrend,
   buildTrendBuckets,
-  formatMoney,
+  formatMoneyWithSymbol,
   formatPercent,
   formatShortDate,
   getActiveBudgets,
@@ -18,7 +20,10 @@ import {
   sumAmounts,
   toIsoDate,
   todayUtc,
+  toReportCurrencyBudgets,
+  toReportCurrencyExpenses,
   type Period,
+  type ReportCurrency,
 } from "@/lib/reports";
 import { CategoriasChart, TendenciaChart } from "@/app/reportes/graficos";
 
@@ -40,7 +45,8 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const granularity = getTrendGranularity(period);
   const buckets = buildTrendBuckets(range, granularity);
 
-  const [expenseRows, budgetRows] = await Promise.all([
+  const [settings, expenseRows, budgetRows] = await Promise.all([
+    getSettings(),
     prisma.expense.findMany({
       where: { date: { gte: range.start, lt: range.end } },
       include: { category: true },
@@ -53,21 +59,37 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     }),
   ]);
 
-  const expenses = expenseRows.map((e) => ({
-    amount: e.amount.toNumber(),
-    date: e.date,
-    categoryId: e.categoryId,
-    category: { id: e.category.id, name: e.category.name, color: e.category.color },
-  }));
+  // Todos los totales se expresan en la moneda por defecto de la configuración.
+  const fx: ReportCurrency = {
+    target: settings.defaultCurrency,
+    usdToGtq: settings.usdToGtq.toNumber(),
+  };
+  const symbol = CURRENCY_SYMBOL[settings.defaultCurrency];
+  const money = (amount: number) => formatMoneyWithSymbol(amount, symbol);
 
-  const budgets = budgetRows.map((b) => ({
-    id: b.id,
-    name: b.name,
-    amount: b.amount.toNumber(),
-    startDate: b.startDate,
-    endDate: b.endDate,
-    categoryIds: b.categories.map((c) => c.id),
-  }));
+  const expenses = toReportCurrencyExpenses(
+    expenseRows.map((e) => ({
+      amount: e.amount.toNumber(),
+      currency: e.currency,
+      date: e.date,
+      categoryId: e.categoryId,
+      category: { id: e.category.id, name: e.category.name, color: e.category.color },
+    })),
+    fx,
+  );
+
+  const budgets = toReportCurrencyBudgets(
+    budgetRows.map((b) => ({
+      id: b.id,
+      name: b.name,
+      amount: b.amount.toNumber(),
+      currency: b.currency,
+      startDate: b.startDate,
+      endDate: b.endDate,
+      categoryIds: b.categories.map((c) => c.id),
+    })),
+    fx,
+  );
 
   const total = sumAmounts(expenses);
   const categories = aggregateByCategory(expenses);
@@ -140,7 +162,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </header>
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Card label="Total gastado" value={formatMoney(total)} emphasis />
+          <Card label="Total gastado" value={money(total)} emphasis />
           <Card label="Gastos registrados" value={String(expenses.length)} />
           <Card label="Presupuestos activos" value={String(activeBudgets.length)} />
         </section>
@@ -151,7 +173,10 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             {expenses.length === 0 ? (
               <Empty />
             ) : (
-              <TendenciaChart data={trend.map((p) => ({ label: p.label, total: p.total }))} />
+              <TendenciaChart
+                symbol={symbol}
+                data={trend.map((p) => ({ label: p.label, total: p.total }))}
+              />
             )}
           </div>
 
@@ -162,6 +187,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             ) : (
               <>
                 <CategoriasChart
+                  symbol={symbol}
                   data={categories.map((c) => ({
                     name: c.name,
                     total: c.total,
@@ -180,7 +206,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                         {c.name}
                       </span>
                       <span className="tabular-nums text-zinc-600">
-                        {formatMoney(c.total)}{" "}
+                        {money(c.total)}{" "}
                         <span className="text-zinc-400">({formatPercent(c.share)})</span>
                       </span>
                     </li>
@@ -222,13 +248,13 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                     </div>
                     <div className="flex flex-wrap justify-between gap-x-4 text-xs text-zinc-600 tabular-nums">
                       <span>
-                        Gastado {formatMoney(b.spent)} de {formatMoney(b.amount)} (
+                        Gastado {money(b.spent)} de {money(b.amount)} (
                         {formatPercent(b.percent / 100)})
                       </span>
                       <span className={b.exceeded ? "font-medium text-red-600" : ""}>
                         {b.exceeded
-                          ? `Excedido por ${formatMoney(Math.abs(b.remaining))}`
-                          : `Restante ${formatMoney(b.remaining)}`}
+                          ? `Excedido por ${money(Math.abs(b.remaining))}`
+                          : `Restante ${money(b.remaining)}`}
                       </span>
                     </div>
                   </li>
