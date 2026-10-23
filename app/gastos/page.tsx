@@ -4,11 +4,13 @@ import {
   formatAmount,
   formatDate,
   formatDateInput,
+  formatMoney,
   getExpense,
   listExpenses,
   parseFilters,
   sumExpenses,
 } from "@/lib/expenses";
+import { getSettings } from "@/lib/settings";
 import DeleteExpenseButton from "./DeleteExpenseButton";
 import ExpenseForm from "./ExpenseForm";
 
@@ -40,15 +42,18 @@ export default async function GastosPage({
     categoryId: categoria,
   });
 
+  const settings = await getSettings();
   const [categories, expenses, summary, editing] = await Promise.all([
     prisma.category.findMany({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     listExpenses(filters),
-    sumExpenses(filters),
+    sumExpenses(filters, settings),
     editarId ? getExpense(editarId) : Promise.resolve(null),
   ]);
+  const nombreMonedaTotal =
+    settings.defaultCurrency === "GTQ" ? "quetzales" : "dólares";
 
   // Parámetros de filtro conservados en los enlaces de edición y cancelación.
   const filterParams = new URLSearchParams();
@@ -73,6 +78,7 @@ export default async function GastosPage({
     ? {
         id: editing.id,
         amount: editing.amount.toFixed(2),
+        currency: editing.currency,
         date: formatDateInput(editing.date),
         categoryId: editing.categoryId,
         description: editing.description ?? "",
@@ -102,6 +108,7 @@ export default async function GastosPage({
           <ExpenseForm
             key={editingExpense?.id ?? "nuevo"}
             categories={categories}
+            defaultCurrency={settings.defaultCurrency}
             defaultDate={formatDateInput(new Date())}
             cancelHref={listHref}
             expense={editingExpense}
@@ -185,12 +192,17 @@ export default async function GastosPage({
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             {summary.count} {summary.count === 1 ? "gasto" : "gastos"}
           </p>
-          <p className="text-sm">
-            Total:{" "}
-            <span className="text-lg font-semibold tabular-nums">
-              {formatAmount(summary.total)}
-            </span>
-          </p>
+          <div className="text-right text-sm">
+            <p>
+              Total en {nombreMonedaTotal}:{" "}
+              <span className="text-lg font-semibold tabular-nums">
+                {formatMoney(summary.total, summary.currency)}
+              </span>
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Tipo de cambio: 1 USD = {formatAmount(settings.usdToGtq)} Q
+            </p>
+          </div>
         </div>
 
         {expenses.length === 0 ? (
@@ -224,7 +236,7 @@ export default async function GastosPage({
                   </p>
                 </div>
                 <div className="text-sm font-medium tabular-nums">
-                  {formatAmount(expense.amount)}
+                  {formatMoney(expense.amount, expense.currency)}
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <Link

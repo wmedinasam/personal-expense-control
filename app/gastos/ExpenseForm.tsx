@@ -2,16 +2,22 @@
 
 import Link from "next/link";
 import { useRef, useState, useTransition, type FormEvent } from "react";
+import { CURRENCY_LABEL } from "@/lib/currency";
 import type { ActionResult } from "@/lib/expenses";
 import { crearGasto, editarGasto } from "./actions";
 
+const CURRENCIES = ["GTQ", "USD"] as const;
+type Currency = (typeof CURRENCIES)[number];
+
 type Props = {
   categories: { id: string; name: string }[];
+  defaultCurrency: Currency;
   defaultDate: string;
   cancelHref: string;
   expense?: {
     id: string;
     amount: string;
+    currency: Currency;
     date: string;
     categoryId: string;
     description: string;
@@ -25,6 +31,7 @@ const labelClass = "mb-1 block text-sm font-medium text-neutral-700 dark:text-ne
 
 export default function ExpenseForm({
   categories,
+  defaultCurrency,
   defaultDate,
   cancelHref,
   expense,
@@ -71,6 +78,33 @@ export default function ExpenseForm({
         {fieldErrors.amount && (
           <p id="amount-error" className="mt-1 text-xs text-red-600">
             {fieldErrors.amount}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="currency" className={labelClass}>
+          Moneda
+        </label>
+        <select
+          id="currency"
+          name="currency"
+          defaultValue={expense?.currency ?? defaultCurrency}
+          aria-invalid={Boolean(fieldErrors.currency)}
+          aria-describedby={
+            fieldErrors.currency ? "currency-error" : undefined
+          }
+          className={inputClass}
+        >
+          {CURRENCIES.map((currency) => (
+            <option key={currency} value={currency}>
+              {CURRENCY_LABEL[currency]}
+            </option>
+          ))}
+        </select>
+        {fieldErrors.currency && (
+          <p id="currency-error" className="mt-1 text-xs text-red-600">
+            {fieldErrors.currency}
           </p>
         )}
       </div>

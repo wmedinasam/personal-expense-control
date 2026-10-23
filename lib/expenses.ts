@@ -1,7 +1,14 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, type Currency } from "@prisma/client";
+import { CURRENCY_SYMBOL, convertAmount } from "@/lib/currency";
 import { prisma } from "@/lib/db";
+import type { AppSettings } from "@/lib/settings";
 
-export type ExpenseField = "amount" | "date" | "categoryId" | "description";
+export type ExpenseField =
+  | "amount"
+  | "currency"
+  | "date"
+  | "categoryId"
+  | "description";
 
 export type FieldErrors = Partial<Record<ExpenseField, string>>;
 
@@ -11,6 +18,7 @@ export type ActionResult =
 
 export type ExpenseData = {
   amount: Prisma.Decimal;
+  currency: Currency;
   date: Date;
   categoryId: string;
   description: string | null;
@@ -67,6 +75,14 @@ export async function validateExpenseInput(
     }
   }
 
+  let currency: Currency | undefined;
+  const currencyText = (raw.currency ?? "").trim();
+  if (currencyText === "GTQ" || currencyText === "USD") {
+    currency = currencyText;
+  } else {
+    fieldErrors.currency = "Selecciona una moneda válida.";
+  }
+
   const date = parseDate((raw.date ?? "").trim());
   if (!date) {
     fieldErrors.date = "Introduce una fecha válida.";
@@ -90,7 +106,7 @@ export async function validateExpenseInput(
     fieldErrors.description = `La descripción no puede superar ${MAX_DESCRIPTION_LENGTH} caracteres.`;
   }
 
-  if (Object.keys(fieldErrors).length > 0 || !amount || !date) {
+  if (Object.keys(fieldErrors).length > 0 || !amount || !currency || !date) {
     return { ok: false, fieldErrors };
   }
 
@@ -98,6 +114,7 @@ export async function validateExpenseInput(
     ok: true,
     data: {
       amount,
+      currency,
       date,
       categoryId,
       description: description || null,
@@ -150,16 +167,35 @@ export function listExpenses(filters: ExpenseFilters) {
   });
 }
 
-export async function sumExpenses(filters: ExpenseFilters) {
-  const result = await prisma.expense.aggregate({
+/**
+ * Suma los gastos filtrados en la moneda por defecto: cada subtotal por moneda
+ * se convierte con el tipo de cambio de la configuración.
+ */
+export async function sumExpenses(
+  filters: ExpenseFilters,
+  settings: AppSettings,
+) {
+  const groups = await prisma.expense.groupBy({
+    by: ["currency"],
     where: buildWhere(filters),
     _sum: { amount: true },
     _count: { _all: true },
   });
-  return {
-    total: result._sum.amount ?? new Prisma.Decimal(0),
-    count: result._count._all,
-  };
+
+  let total = new Prisma.Decimal(0);
+  let count = 0;
+  for (const group of groups) {
+    count += group._count._all;
+    total = total.plus(
+      convertAmount(
+        group._sum.amount ?? new Prisma.Decimal(0),
+        group.currency,
+        settings.defaultCurrency,
+        settings.usdToGtq,
+      ),
+    );
+  }
+  return { total, count, currency: settings.defaultCurrency };
 }
 
 /** Formato español con dos decimales, p. ej. 1.234,50. Sin símbolo de moneda. */
@@ -168,6 +204,14 @@ export function formatAmount(value: Prisma.Decimal | string): string {
     .toFixed(2)
     .split(".");
   return `${integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${decimals}`;
+}
+
+/** Importe con símbolo de moneda, p. ej. "Q 1.234,50" o "$ 12,00". */
+export function formatMoney(
+  value: Prisma.Decimal | string,
+  currency: Currency,
+): string {
+  return `${CURRENCY_SYMBOL[currency]} ${formatAmount(value)}`;
 }
 
 /** Fecha para mostrar: dd/mm/aaaa. */
