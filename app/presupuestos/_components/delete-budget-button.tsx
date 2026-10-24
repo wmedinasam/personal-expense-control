@@ -15,7 +15,7 @@ export function DeleteBudgetButton({ id, name }: { id: string; name: string }) {
       <input type="hidden" name="id" value={id} />
       <button
         type="submit"
-        className="text-sm text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:underline"
+        className="text-sm text-muted hover:text-danger hover:underline"
       >
         Eliminar
       </button>
