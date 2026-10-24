@@ -1,0 +1,16 @@
+{
+  "0": "app/page.tsx",
+  "1": "package.json",
+  "2": "index.tsx",
+  "3": "gastos/page.tsx",
+  "4": "categorias/actions.ts",
+  "5": "presupuestos/page.tsx",
+  "6": "auth.ts",
+  "7": "shared.ts",
+  "8": "compilerOptions",
+  "9": "auditoria/page.tsx",
+  "10": "audit.ts",
+  "11": "README.md",
+  "12": "postcss.config.mjs",
+  "13": "{ GET, POST }"
+}
