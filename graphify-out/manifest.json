@@ -358,5 +358,23 @@
     "seen": 1792805205.799516,
     "ast_hash": "a2760511c65806022ad20adf74370ff3",
     "semantic_hash": ""
+  },
+  ".claude/settings.json": {
+    "mtime": 1792805286.6920917,
+    "seen": 1792805292.60009,
+    "ast_hash": "3b541b9935fcf0831355da956f897645",
+    "semantic_hash": ""
+  },
+  ".claude/CLAUDE.md": {
+    "mtime": 1792805286.6920917,
+    "seen": 1792805292.6020474,
+    "ast_hash": "9b31786b637be3c13978bec4c2330752",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1792805286.6977477,
+    "seen": 1792805292.6020505,
+    "ast_hash": "67d88e9d0760c3ba54c75dfd9551c1c5",
+    "semantic_hash": ""
   }
 }
