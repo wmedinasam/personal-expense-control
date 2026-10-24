@@ -52,7 +52,7 @@ export default async function RootLayout({
         await signOut({ redirectTo: "/login" });
       }}
     >
-      <button type="submit" className="text-neutral-400 hover:text-white hover:underline">
+      <button type="submit" className="text-muted hover:text-foreground hover:underline">
         Salir
       </button>
     </form>
@@ -62,11 +62,11 @@ export default async function RootLayout({
   if (user && user.status !== "ACTIVE") {
     content = (
       <main className="flex min-h-screen items-center justify-center px-4">
-        <div className="max-w-sm space-y-4 rounded-xl border border-neutral-800 bg-neutral-900 p-8 text-center">
-          <h1 className="text-lg font-semibold text-neutral-100">
+        <div className="max-w-sm space-y-4 rounded-lg border border-border bg-surface p-8 text-center">
+          <h1 className="text-lg font-semibold text-foreground">
             {user.status === "PENDING" ? "Cuenta pendiente de aprobación" : "Cuenta desactivada"}
           </h1>
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-muted">
             {user.status === "PENDING"
               ? `Tu cuenta (${user.email}) ya está creada. Un administrador debe aprobarla para que puedas entrar.`
               : "Un administrador desactivó tu cuenta. Pídele que la vuelva a activar."}
@@ -78,12 +78,12 @@ export default async function RootLayout({
   } else if (user) {
     content = (
       <>
-        <nav className="border-b border-neutral-800 bg-neutral-950">
+        <nav className="border-b border-border bg-surface">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-3 text-sm">
             <ul className="flex flex-wrap gap-4">
               {links.map((l) => (
                 <li key={l.href}>
-                  <Link href={l.href} className="text-neutral-300 hover:text-white hover:underline">
+                  <Link href={l.href} className="text-muted hover:text-foreground hover:underline">
                     {l.label}
                   </Link>
                 </li>
@@ -94,7 +94,7 @@ export default async function RootLayout({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.image} alt="" className="size-6 rounded-full" referrerPolicy="no-referrer" />
               )}
-              <span className="text-neutral-300">{user.name ?? user.email}</span>
+              <span className="text-muted">{user.name ?? user.email}</span>
               {logout}
             </div>
           </div>

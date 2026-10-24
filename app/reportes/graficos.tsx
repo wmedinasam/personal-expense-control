@@ -12,9 +12,17 @@ import {
 } from "recharts";
 import { formatMoney, formatMoneyWithSymbol } from "@/lib/reports";
 
-const TOOLTIP_STYLE = { backgroundColor: "#18181b", border: "1px solid #3f3f46", color: "#f4f4f5" };
+// Valores hex de los tokens del tema oscuro (app/globals.css).
+const GRID = "#262b38"; // border
+const MUTED = "#9aa3b2"; // muted
+const FOREGROUND = "#e7e9ee"; // foreground
+const SURFACE = "#13161e"; // surface
+const SURFACE_2 = "#1b1f2a"; // surface-2
+const ACCENT = "#6ee7b7"; // accent
 
-const AXIS_TICK = { fontSize: 12, fill: "#a1a1aa" };
+const TOOLTIP_STYLE = { backgroundColor: SURFACE, border: `1px solid ${GRID}`, color: FOREGROUND };
+
+const AXIS_TICK = { fontSize: 12, fill: MUTED };
 
 export function TendenciaChart({
   data,
@@ -27,7 +35,7 @@ export function TendenciaChart({
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid vertical={false} stroke="#27272a" />
+          <CartesianGrid vertical={false} stroke={GRID} />
           <XAxis
             dataKey="label"
             tick={AXIS_TICK}
@@ -45,11 +53,12 @@ export function TendenciaChart({
           />
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
-            itemStyle={{ color: "#f4f4f5" }}
-            cursor={{ fill: "#27272a" }}
+            itemStyle={{ color: FOREGROUND }}
+            labelStyle={{ color: MUTED }}
+            cursor={{ fill: SURFACE_2 }}
             formatter={(value) => formatMoneyWithSymbol(Number(value), symbol)}
           />
-          <Bar dataKey="total" name="Gasto" fill="#94a3b8" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="total" name="Gasto" fill={ACCENT} radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -74,7 +83,7 @@ export function CategoriasChart({
           layout="vertical"
           margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
         >
-          <CartesianGrid horizontal={false} stroke="#27272a" />
+          <CartesianGrid horizontal={false} stroke={GRID} />
           <XAxis
             type="number"
             tick={AXIS_TICK}
@@ -92,8 +101,9 @@ export function CategoriasChart({
           />
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
-            itemStyle={{ color: "#f4f4f5" }}
-            cursor={{ fill: "#27272a" }}
+            itemStyle={{ color: FOREGROUND }}
+            labelStyle={{ color: MUTED }}
+            cursor={{ fill: SURFACE_2 }}
             formatter={(value) => formatMoneyWithSymbol(Number(value), symbol)}
           />
           <Bar dataKey="total" name="Gasto" radius={[0, 3, 3, 0]}>

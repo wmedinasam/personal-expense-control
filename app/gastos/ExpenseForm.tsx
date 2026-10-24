@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRef, useState, useTransition, type FormEvent } from "react";
+import { Button, ButtonLink, Input, Label, Select } from "@/app/_components/ui";
 import { CURRENCY_LABEL } from "@/lib/currency";
 import type { ActionResult } from "@/lib/expenses";
 import { crearGasto, editarGasto } from "./actions";
@@ -24,10 +24,7 @@ type Props = {
   };
 };
 
-const inputClass =
-  "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 aria-[invalid=true]:border-red-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:focus:border-neutral-100 dark:focus:ring-neutral-100";
-
-const labelClass = "mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300";
+const invalidClass = "aria-[invalid=true]:border-danger";
 
 export default function ExpenseForm({
   categories,
@@ -61,11 +58,9 @@ export default function ExpenseForm({
       noValidate
       className="grid gap-4 sm:grid-cols-2"
     >
-      <div>
-        <label htmlFor="amount" className={labelClass}>
-          Importe
-        </label>
-        <input
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="amount">Importe</Label>
+        <Input
           id="amount"
           name="amount"
           inputMode="decimal"
@@ -73,20 +68,18 @@ export default function ExpenseForm({
           defaultValue={expense?.amount}
           aria-invalid={Boolean(fieldErrors.amount)}
           aria-describedby={fieldErrors.amount ? "amount-error" : undefined}
-          className={inputClass}
+          className={invalidClass}
         />
         {fieldErrors.amount && (
-          <p id="amount-error" className="mt-1 text-xs text-red-600">
+          <p id="amount-error" className="text-xs text-danger">
             {fieldErrors.amount}
           </p>
         )}
       </div>
 
-      <div>
-        <label htmlFor="currency" className={labelClass}>
-          Moneda
-        </label>
-        <select
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="currency">Moneda</Label>
+        <Select
           id="currency"
           name="currency"
           defaultValue={expense?.currency ?? defaultCurrency}
@@ -94,46 +87,42 @@ export default function ExpenseForm({
           aria-describedby={
             fieldErrors.currency ? "currency-error" : undefined
           }
-          className={inputClass}
+          className={invalidClass}
         >
           {CURRENCIES.map((currency) => (
             <option key={currency} value={currency}>
               {CURRENCY_LABEL[currency]}
             </option>
           ))}
-        </select>
+        </Select>
         {fieldErrors.currency && (
-          <p id="currency-error" className="mt-1 text-xs text-red-600">
+          <p id="currency-error" className="text-xs text-danger">
             {fieldErrors.currency}
           </p>
         )}
       </div>
 
-      <div>
-        <label htmlFor="date" className={labelClass}>
-          Fecha
-        </label>
-        <input
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="date">Fecha</Label>
+        <Input
           id="date"
           name="date"
           type="date"
           defaultValue={expense?.date ?? defaultDate}
           aria-invalid={Boolean(fieldErrors.date)}
           aria-describedby={fieldErrors.date ? "date-error" : undefined}
-          className={inputClass}
+          className={invalidClass}
         />
         {fieldErrors.date && (
-          <p id="date-error" className="mt-1 text-xs text-red-600">
+          <p id="date-error" className="text-xs text-danger">
             {fieldErrors.date}
           </p>
         )}
       </div>
 
-      <div>
-        <label htmlFor="categoryId" className={labelClass}>
-          Categoría
-        </label>
-        <select
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="categoryId">Categoría</Label>
+        <Select
           id="categoryId"
           name="categoryId"
           defaultValue={expense?.categoryId ?? ""}
@@ -141,7 +130,7 @@ export default function ExpenseForm({
           aria-describedby={
             fieldErrors.categoryId ? "category-error" : undefined
           }
-          className={inputClass}
+          className={invalidClass}
         >
           <option value="">Selecciona una categoría</option>
           {categories.map((category) => (
@@ -149,24 +138,24 @@ export default function ExpenseForm({
               {category.name}
             </option>
           ))}
-        </select>
+        </Select>
         {categories.length === 0 && (
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="text-xs text-muted">
             No hay categorías disponibles.
           </p>
         )}
         {fieldErrors.categoryId && (
-          <p id="category-error" className="mt-1 text-xs text-red-600">
+          <p id="category-error" className="text-xs text-danger">
             {fieldErrors.categoryId}
           </p>
         )}
       </div>
 
-      <div>
-        <label htmlFor="description" className={labelClass}>
-          Descripción <span className="font-normal text-neutral-500">(opcional)</span>
-        </label>
-        <input
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="description">
+          Descripción <span className="font-normal text-muted">(opcional)</span>
+        </Label>
+        <Input
           id="description"
           name="description"
           maxLength={200}
@@ -175,35 +164,28 @@ export default function ExpenseForm({
           aria-describedby={
             fieldErrors.description ? "description-error" : undefined
           }
-          className={inputClass}
+          className={invalidClass}
         />
         {fieldErrors.description && (
-          <p id="description-error" className="mt-1 text-xs text-red-600">
+          <p id="description-error" className="text-xs text-danger">
             {fieldErrors.description}
           </p>
         )}
       </div>
 
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
-        >
+        <Button type="submit" variant="primary" disabled={pending}>
           {pending ? "Guardando…" : isEdit ? "Guardar cambios" : "Añadir gasto"}
-        </button>
+        </Button>
         {isEdit && (
-          <Link
-            href={cancelHref}
-            className="text-sm text-neutral-600 hover:underline dark:text-neutral-400"
-          >
+          <ButtonLink href={cancelHref} variant="ghost">
             Cancelar edición
-          </Link>
+          </ButtonLink>
         )}
         {result && (
           <p
             role="status"
-            className={`text-sm ${result.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}
+            className={`text-sm ${result.ok ? "text-success" : "text-danger"}`}
           >
             {result.message}
           </p>

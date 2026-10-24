@@ -1,5 +1,14 @@
-import Link from "next/link";
 import { AuditStamp } from "@/app/_components/AuditStamp";
+import {
+  Button,
+  ButtonLink,
+  Card,
+  EmptyState,
+  FormError,
+  Input,
+  Label,
+  Select,
+} from "@/app/_components/ui";
 import CategoryIcon from "@/app/categorias/CategoryIcon";
 import { prisma } from "@/lib/db";
 import {
@@ -23,9 +32,6 @@ type SearchParams = Record<string, string | string[] | undefined>;
 function single(value: string | string[] | undefined): string {
   return (Array.isArray(value) ? value[0] : value) ?? "";
 }
-
-const fieldClass =
-  "rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:focus:border-neutral-100";
 
 export default async function GastosPage({
   searchParams,
@@ -88,22 +94,22 @@ export default async function GastosPage({
     : undefined;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8 text-neutral-900 dark:text-neutral-100">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8 text-foreground">
       <header>
-        <h1 className="text-2xl font-semibold">Gastos</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Gastos</h1>
       </header>
 
-      <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+      <Card>
         <h2 className="mb-4 text-base font-semibold">
           {editingExpense ? "Editar gasto" : "Nuevo gasto"}
         </h2>
         {editarId && !editing && (
-          <p className="mb-4 text-sm text-red-600 dark:text-red-400">
-            El gasto que intentas editar no existe.
-          </p>
+          <div className="mb-4">
+            <FormError>El gasto que intentas editar no existe.</FormError>
+          </div>
         )}
         {categories.length === 0 ? (
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted">
             No hay categorías. Crea al menos una antes de registrar gastos.
           </p>
         ) : (
@@ -116,82 +122,51 @@ export default async function GastosPage({
             expense={editingExpense}
           />
         )}
-      </section>
+      </Card>
 
       <section className="flex flex-col gap-4">
-        <form
-          method="get"
-          action="/gastos"
-          className="flex flex-wrap items-end gap-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div className="flex flex-col gap-1">
-            <label htmlFor="desde" className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-              Desde
-            </label>
-            <input
-              id="desde"
-              name="desde"
-              type="date"
-              defaultValue={desde}
-              className={fieldClass}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="hasta" className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-              Hasta
-            </label>
-            <input
-              id="hasta"
-              name="hasta"
-              type="date"
-              defaultValue={hasta}
-              className={fieldClass}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="categoria" className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-              Categoría
-            </label>
-            <select
-              id="categoria"
-              name="categoria"
-              defaultValue={categoria}
-              className={fieldClass}
-            >
-              <option value="">Todas</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
-            >
-              Aplicar
-            </button>
-            {hayFiltros && (
-              <Link
-                href="/gastos"
-                className="text-sm text-neutral-600 hover:underline dark:text-neutral-400"
-              >
-                Limpiar
-              </Link>
-            )}
-          </div>
-        </form>
+        <Card className="p-4">
+          <form method="get" action="/gastos" className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="desde">Desde</Label>
+              <Input id="desde" name="desde" type="date" defaultValue={desde} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="hasta">Hasta</Label>
+              <Input id="hasta" name="hasta" type="date" defaultValue={hasta} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="categoria">Categoría</Label>
+              <Select id="categoria" name="categoria" defaultValue={categoria}>
+                <option value="">Todas</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button type="submit" variant="primary">
+                Aplicar
+              </Button>
+              {hayFiltros && (
+                <ButtonLink href="/gastos" variant="ghost">
+                  Limpiar
+                </ButtonLink>
+              )}
+            </div>
+          </form>
+        </Card>
 
         {rangoInvalido && (
-          <p className="text-sm text-amber-700 dark:text-amber-400">
+          <FormError>
             La fecha &quot;Desde&quot; es posterior a &quot;Hasta&quot;, por lo que no hay resultados.
-          </p>
+          </FormError>
         )}
 
-        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-neutral-200 pb-2 dark:border-neutral-800">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-2">
+          <p className="text-sm text-muted">
             {summary.count} {summary.count === 1 ? "gasto" : "gastos"}
           </p>
           <div className="text-right text-sm">
@@ -201,18 +176,16 @@ export default async function GastosPage({
                 {formatMoney(summary.total, summary.currency)}
               </span>
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-muted">
               Tipo de cambio: 1 USD = {formatAmount(settings.usdToGtq)} Q
             </p>
           </div>
         </div>
 
         {expenses.length === 0 ? (
-          <p className="py-6 text-center text-sm text-neutral-500">
-            No hay gastos para este filtro.
-          </p>
+          <EmptyState>No hay gastos para este filtro.</EmptyState>
         ) : (
-          <ul className="divide-y divide-neutral-200 dark:divide-neutral-800">
+          <ul className="divide-y divide-border">
             {expenses.map((expense) => (
               <li
                 key={expense.id}
@@ -220,7 +193,7 @@ export default async function GastosPage({
               >
                 <time
                   dateTime={formatDateInput(expense.date)}
-                  className="w-24 shrink-0 text-sm tabular-nums text-neutral-500 dark:text-neutral-400"
+                  className="w-24 shrink-0 text-sm tabular-nums text-muted"
                 >
                   {formatDate(expense.date)}
                 </time>
@@ -229,7 +202,7 @@ export default async function GastosPage({
                     <CategoryIcon icon={expense.category.icon} color={expense.category.color} />
                     {expense.category.name}
                   </div>
-                  <p className="truncate text-sm text-neutral-600 dark:text-neutral-400">
+                  <p className="truncate text-sm text-muted">
                     {expense.description || "Sin descripción"}
                   </p>
                   <AuditStamp record={expense} />
@@ -237,13 +210,10 @@ export default async function GastosPage({
                 <div className="text-sm font-medium tabular-nums">
                   {formatMoney(expense.amount, expense.currency)}
                 </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Link
-                    href={editHref(expense.id)}
-                    className="text-neutral-700 hover:underline dark:text-neutral-300"
-                  >
+                <div className="flex items-center gap-2">
+                  <ButtonLink href={editHref(expense.id)} variant="secondary">
                     Editar
-                  </Link>
+                  </ButtonLink>
                   <DeleteExpenseButton id={expense.id} />
                 </div>
               </li>

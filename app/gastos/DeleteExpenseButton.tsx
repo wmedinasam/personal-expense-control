@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/app/_components/ui";
 import { borrarGasto } from "./actions";
 
 export default function DeleteExpenseButton({ id }: { id: string }) {
@@ -20,15 +21,10 @@ export default function DeleteExpenseButton({ id }: { id: string }) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={pending}
-        className="text-red-600 hover:underline disabled:opacity-50 dark:text-red-400"
-      >
+      <Button type="button" variant="danger" onClick={handleClick} disabled={pending}>
         {pending ? "Borrando…" : "Borrar"}
-      </button>
-      {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
+      </Button>
+      {error && <span className="text-xs text-danger">{error}</span>}
     </>
   );
 }

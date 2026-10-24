@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import CategoryIcon from "@/app/categorias/CategoryIcon";
+import { Button, Card, EmptyState, PageShell } from "@/app/_components/ui";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { CURRENCY_SYMBOL } from "@/lib/currency";
@@ -132,226 +133,214 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const trendTitle = granularity === "day" ? "Gasto diario" : "Gasto mensual";
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-        <header className="flex flex-col gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Reportes de gastos</h1>
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <nav
-              aria-label="Tipo de periodo"
-              className="inline-flex w-fit rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-1 text-sm"
-            >
-              {PERIODS.map((option) => {
-                const active = option.value === period;
-                return (
-                  <Link
-                    key={option.value}
-                    href={periodHref(option.value, reference, selectedIds)}
-                    aria-current={active ? "page" : undefined}
-                    className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
-                      active
-                        ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-neutral-950"
-                        : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
-                    }`}
-                  >
-                    {option.label}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="flex items-center justify-between gap-2 text-sm sm:justify-end">
-              <Link
-                href={prevHref}
-                className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 px-3 py-1.5 font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              >
-                ← Anterior
-              </Link>
-              <span className="min-w-0 flex-1 truncate text-center font-medium sm:flex-none sm:px-2">
-                {range.label}
-              </span>
-              {!isCurrentPeriod && (
+    <PageShell title="Reportes de gastos">
+      <header className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <nav
+            aria-label="Tipo de periodo"
+            className="inline-flex w-fit rounded-lg border border-border bg-surface p-1 text-sm"
+          >
+            {PERIODS.map((option) => {
+              const active = option.value === period;
+              return (
                 <Link
-                  href={todayHref}
-                  className="rounded-md px-2 py-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  key={option.value}
+                  href={periodHref(option.value, reference, selectedIds)}
+                  aria-current={active ? "page" : undefined}
+                  className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
+                    active
+                      ? "bg-accent text-accent-fg"
+                      : "text-muted hover:bg-surface-2 hover:text-foreground"
+                  }`}
                 >
-                  Hoy
+                  {option.label}
                 </Link>
+              );
+            })}
+          </nav>
+
+          <div className="flex items-center justify-between gap-2 text-sm sm:justify-end">
+            <Link
+              href={prevHref}
+              className="rounded-md border border-border bg-surface px-3 py-1.5 font-medium text-foreground hover:bg-surface-2"
+            >
+              ← Anterior
+            </Link>
+            <span className="min-w-0 flex-1 truncate text-center font-medium sm:flex-none sm:px-2">
+              {range.label}
+            </span>
+            {!isCurrentPeriod && (
+              <Link href={todayHref} className="rounded-md px-2 py-1.5 text-muted hover:text-foreground">
+                Hoy
+              </Link>
+            )}
+            <Link
+              href={nextHref}
+              className="rounded-md border border-border bg-surface px-3 py-1.5 font-medium text-foreground hover:bg-surface-2"
+            >
+              Siguiente →
+            </Link>
+          </div>
+        </div>
+
+        {allCategories.length > 0 && (
+          <form
+            method="get"
+            action="/"
+            className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 text-sm"
+          >
+            <input type="hidden" name="periodo" value={period} />
+            <input type="hidden" name="fecha" value={toIsoDate(reference)} />
+            <fieldset className="flex flex-wrap gap-x-4 gap-y-2">
+              <legend className="mb-2 font-medium text-muted">Categorías</legend>
+              {allCategories.map((c) => (
+                <label key={c.id} className="flex cursor-pointer items-center gap-2 text-foreground">
+                  <input
+                    type="checkbox"
+                    name="cat"
+                    value={c.id}
+                    defaultChecked={selectedIds.includes(c.id)}
+                    className="size-4 accent-accent"
+                  />
+                  <CategoryIcon icon={c.icon} color={c.color} size={14} />
+                  {c.name}
+                </label>
+              ))}
+            </fieldset>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="submit" variant="primary" className="px-3 py-1.5">
+                Aplicar
+              </Button>
+              <Link
+                href={periodHref(period, reference)}
+                aria-current={filtering ? undefined : "page"}
+                className="rounded-md border border-border bg-surface-2 px-3 py-1.5 font-medium text-foreground hover:bg-border"
+              >
+                Todas
+              </Link>
+              {filtering && (
+                <span className="text-muted">
+                  {selectedIds.length} de {allCategories.length} seleccionadas
+                </span>
               )}
-              <Link
-                href={nextHref}
-                className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 px-3 py-1.5 font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              >
-                Siguiente →
-              </Link>
             </div>
-          </div>
+          </form>
+        )}
+      </header>
 
-          {allCategories.length > 0 && (
-            <form
-              method="get"
-              action="/"
-              className="flex flex-col gap-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-4 text-sm"
-            >
-              <input type="hidden" name="periodo" value={period} />
-              <input type="hidden" name="fecha" value={toIsoDate(reference)} />
-              <fieldset className="flex flex-wrap gap-x-4 gap-y-2">
-                <legend className="mb-2 font-medium text-zinc-500 dark:text-zinc-400">Categorías</legend>
-                {allCategories.map((c) => (
-                  <label key={c.id} className="flex cursor-pointer items-center gap-2 text-zinc-700 dark:text-zinc-300">
-                    <input
-                      type="checkbox"
-                      name="cat"
-                      value={c.id}
-                      defaultChecked={selectedIds.includes(c.id)}
-                      className="size-4 accent-zinc-900 dark:accent-zinc-100"
-                    />
-                    <CategoryIcon icon={c.icon} color={c.color} size={14} />
-                    {c.name}
-                  </label>
-                ))}
-              </fieldset>
-              <div className="flex items-center gap-2">
-                <button
-                  type="submit"
-                  className="rounded-md bg-zinc-900 dark:bg-zinc-100 px-3 py-1.5 font-medium text-white dark:text-neutral-950 hover:bg-zinc-700 dark:hover:bg-zinc-300"
-                >
-                  Aplicar
-                </button>
-                <Link
-                  href={periodHref(period, reference)}
-                  aria-current={filtering ? undefined : "page"}
-                  className="rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                >
-                  Todas
-                </Link>
-                {filtering && (
-                  <span className="text-zinc-500 dark:text-zinc-400">
-                    {selectedIds.length} de {allCategories.length} seleccionadas
-                  </span>
-                )}
-              </div>
-            </form>
-          )}
-        </header>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Stat label="Total gastado" value={money(total)} emphasis />
+        <Stat label="Gastos registrados" value={String(expenses.length)} />
+        <Stat label="Presupuestos activos" value={String(activeBudgets.length)} />
+      </section>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Card label="Total gastado" value={money(total)} emphasis />
-          <Card label="Gastos registrados" value={String(expenses.length)} />
-          <Card label="Presupuestos activos" value={String(activeBudgets.length)} />
-        </section>
-
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-5 lg:col-span-2">
-            <h2 className="mb-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">{trendTitle}</h2>
-            {expenses.length === 0 ? (
-              <Empty />
-            ) : (
-              <TendenciaChart
-                symbol={symbol}
-                data={trend.map((p) => ({ label: p.label, total: p.total }))}
-              />
-            )}
-          </div>
-
-          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-5">
-            <h2 className="mb-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">Gasto por categoría</h2>
-            {categories.length === 0 ? (
-              <Empty />
-            ) : (
-              <>
-                <CategoriasChart
-                  symbol={symbol}
-                  data={categories.map((c) => ({
-                    name: c.name,
-                    total: c.total,
-                    color: c.color,
-                  }))}
-                />
-                <ul className="mt-4 divide-y divide-zinc-100 dark:divide-zinc-800 text-sm">
-                  {categories.map((c) => (
-                    <li key={c.categoryId} className="flex items-center justify-between py-2">
-                      <span className="flex items-center gap-2">
-                        <CategoryIcon icon={c.icon} color={c.color} />
-                        {c.name}
-                      </span>
-                      <span className="tabular-nums text-zinc-600 dark:text-zinc-400">
-                        {money(c.total)}{" "}
-                        <span className="text-zinc-400 dark:text-zinc-600">({formatPercent(c.share)})</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-        </section>
-
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-5">
-          <h2 className="mb-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">Presupuestos activos</h2>
-          {activeBudgets.length === 0 ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">No hay presupuestos activos en este periodo.</p>
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <h2 className="mb-4 text-sm font-medium text-muted">{trendTitle}</h2>
+          {expenses.length === 0 ? (
+            <Empty />
           ) : (
-            <ul className="flex flex-col gap-5">
-              {activeBudgets.map((b) => {
-                const barWidth = Math.min(b.percent, 100);
-                return (
-                  <li key={b.id} className="flex flex-col gap-2">
-                    <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-                      <span className="font-medium">{b.name}</span>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {formatShortDate(b.startDate)} – {formatShortDate(b.endDate)}
-                      </span>
-                    </div>
-                    <div
-                      role="progressbar"
-                      aria-label={`Consumo de ${b.name}`}
-                      aria-valuenow={Math.round(Math.min(b.percent, 100))}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900"
-                    >
-                      <div
-                        className={`h-full rounded-full ${b.exceeded ? "bg-red-500 dark:bg-red-400" : "bg-zinc-700 dark:bg-zinc-300"}`}
-                        style={{ width: `${barWidth}%` }}
-                      />
-                    </div>
-                    <div className="flex flex-wrap justify-between gap-x-4 text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">
-                      <span>
-                        Gastado {money(b.spent)} de {money(b.amount)} (
-                        {formatPercent(b.percent / 100)})
-                      </span>
-                      <span className={b.exceeded ? "font-medium text-red-600 dark:text-red-400" : ""}>
-                        {b.exceeded
-                          ? `Excedido por ${money(Math.abs(b.remaining))}`
-                          : `Restante ${money(b.remaining)}`}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <TendenciaChart
+              symbol={symbol}
+              data={trend.map((p) => ({ label: p.label, total: p.total }))}
+            />
           )}
-        </section>
-      </main>
-    </div>
+        </Card>
+
+        <Card>
+          <h2 className="mb-4 text-sm font-medium text-muted">Gasto por categoría</h2>
+          {categories.length === 0 ? (
+            <Empty />
+          ) : (
+            <>
+              <CategoriasChart
+                symbol={symbol}
+                data={categories.map((c) => ({
+                  name: c.name,
+                  total: c.total,
+                  color: c.color,
+                }))}
+              />
+              <ul className="mt-4 divide-y divide-border text-sm">
+                {categories.map((c) => (
+                  <li key={c.categoryId} className="flex items-center justify-between py-2">
+                    <span className="flex items-center gap-2">
+                      <CategoryIcon icon={c.icon} color={c.color} />
+                      {c.name}
+                    </span>
+                    <span className="tabular-nums text-muted">
+                      {money(c.total)}{" "}
+                      <span className="text-muted/70">({formatPercent(c.share)})</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </Card>
+      </section>
+
+      <Card>
+        <h2 className="mb-4 text-sm font-medium text-muted">Presupuestos activos</h2>
+        {activeBudgets.length === 0 ? (
+          <p className="text-sm text-muted">No hay presupuestos activos en este periodo.</p>
+        ) : (
+          <ul className="flex flex-col gap-5">
+            {activeBudgets.map((b) => {
+              const barWidth = Math.min(b.percent, 100);
+              return (
+                <li key={b.id} className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+                    <span className="font-medium">{b.name}</span>
+                    <span className="text-xs text-muted">
+                      {formatShortDate(b.startDate)} – {formatShortDate(b.endDate)}
+                    </span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-label={`Consumo de ${b.name}`}
+                    aria-valuenow={Math.round(Math.min(b.percent, 100))}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className="h-2 w-full overflow-hidden rounded-full bg-surface-2"
+                  >
+                    <div
+                      className={`h-full rounded-full ${b.exceeded ? "bg-danger" : "bg-accent"}`}
+                      style={{ width: `${barWidth}%` }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap justify-between gap-x-4 text-xs tabular-nums text-muted">
+                    <span>
+                      Gastado {money(b.spent)} de {money(b.amount)} (
+                      {formatPercent(b.percent / 100)})
+                    </span>
+                    <span className={b.exceeded ? "font-medium text-danger" : ""}>
+                      {b.exceeded
+                        ? `Excedido por ${money(Math.abs(b.remaining))}`
+                        : `Restante ${money(b.remaining)}`}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+    </PageShell>
   );
 }
 
-function Card({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
+function Stat({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-neutral-900 p-5">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">{label}</p>
-      <p
-        className={`mt-1 tabular-nums ${emphasis ? "text-3xl font-semibold" : "text-2xl font-medium"}`}
-      >
+    <Card>
+      <p className="text-sm text-muted">{label}</p>
+      <p className={`mt-1 tabular-nums ${emphasis ? "text-3xl font-semibold" : "text-2xl font-medium"}`}>
         {value}
       </p>
-    </div>
+    </Card>
   );
 }
 
 function Empty() {
-  return <p className="py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">Sin gastos en este periodo.</p>;
+  return <EmptyState>Sin gastos en este periodo.</EmptyState>;
 }
